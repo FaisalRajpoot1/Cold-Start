@@ -27,7 +27,7 @@ form.
 from __future__ import annotations
 
 import hashlib
-import json
+import shutil
 import subprocess
 from pathlib import Path
 
@@ -234,8 +234,11 @@ def main() -> None:
         cursor += len(collapsed) + 1
     line_offsets.append(cursor)
     flat = " ".join(flat_parts)
+    git = shutil.which("git")
+    if not git:
+        raise SystemExit("git is not on PATH")
     commit = subprocess.run(  # noqa: S603
-        ["git", "-C", str(PRISTINE), "rev-parse", "HEAD"],
+        [git, "-C", str(PRISTINE), "rev-parse", "HEAD"],
         capture_output=True,
         text=True,
         check=True,
