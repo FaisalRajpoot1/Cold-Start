@@ -17,8 +17,17 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from coldstart.run import _parse_ndjson, _prepare_workspace, _run_one_step, run
+from coldstart.run import (
+    _parse_ndjson,
+    _prepare_workspace,
+    _run_one_step,
+    run,
+)
 from coldstart.schema import validate_runs
+
+# Fake absolute bob path used for all _run_one_step unit tests.
+# Must be an absolute path so Path(...).is_absolute() checks pass.
+_FAKE_BOB_EXE = str(Path("/fake/bob").resolve())
 
 # ---------------------------------------------------------------------------
 # Canned NDJSON fixtures
@@ -236,6 +245,7 @@ def test_error_frame_overrides_status(tmp_path, monkeypatch):
         recordings=tmp_path / "rec",
         max_cost=1.5,
         max_turns=12,
+        bob_exe=_FAKE_BOB_EXE,
         bob_env={"BOB_API_KEY": "test"},
     )
 
@@ -266,6 +276,7 @@ def test_success_status_with_no_error_frames_gives_completed(tmp_path, monkeypat
         recordings=tmp_path / "rec",
         max_cost=1.5,
         max_turns=12,
+        bob_exe=_FAKE_BOB_EXE,
         bob_env={"BOB_API_KEY": "test"},
     )
 
@@ -300,6 +311,7 @@ def test_recording_written_before_parse_error(tmp_path, monkeypatch):
         recordings=rec_dir,
         max_cost=1.5,
         max_turns=12,
+        bob_exe=_FAKE_BOB_EXE,
         bob_env={"BOB_API_KEY": "test"},
     )
 
@@ -328,6 +340,7 @@ def test_subprocess_timeout_is_recorded(tmp_path, monkeypatch):
         recordings=tmp_path / "rec",
         max_cost=1.5,
         max_turns=12,
+        bob_exe=_FAKE_BOB_EXE,
         bob_env={"BOB_API_KEY": "test"},
     )
 
@@ -350,6 +363,7 @@ def test_os_error_is_recorded(tmp_path, monkeypatch):
         recordings=tmp_path / "rec",
         max_cost=1.5,
         max_turns=12,
+        bob_exe=_FAKE_BOB_EXE,
         bob_env={"BOB_API_KEY": "test"},
     )
 
@@ -418,6 +432,7 @@ def test_budget_guard_stops_new_steps(tmp_path, monkeypatch):
         )
 
     monkeypatch.setattr("coldstart.run.subprocess.run", _fake_run)
+    monkeypatch.setattr("coldstart.run._resolve_bob", lambda: _FAKE_BOB_EXE)
     monkeypatch.setenv("BOB_API_KEY", "test-key")
 
     out = tmp_path / "runs.json"
@@ -456,6 +471,7 @@ def test_api_key_not_in_runs_json(tmp_path, monkeypatch):
         "coldstart.run.subprocess.run",
         lambda *a, **kw: _make_fake_proc(_CLEAN_NDJSON),
     )
+    monkeypatch.setattr("coldstart.run._resolve_bob", lambda: _FAKE_BOB_EXE)
     monkeypatch.setenv("BOB_API_KEY", secret)
 
     out = tmp_path / "runs.json"
@@ -483,6 +499,7 @@ def test_api_key_not_in_printed_output(tmp_path, monkeypatch, capsys):
         "coldstart.run.subprocess.run",
         lambda *a, **kw: _make_fake_proc(_CLEAN_NDJSON),
     )
+    monkeypatch.setattr("coldstart.run._resolve_bob", lambda: _FAKE_BOB_EXE)
     monkeypatch.setenv("BOB_API_KEY", secret)
 
     run(
@@ -513,6 +530,7 @@ def test_output_validates_against_schema(tmp_path, monkeypatch):
         "coldstart.run.subprocess.run",
         lambda *a, **kw: _make_fake_proc(_CLEAN_NDJSON),
     )
+    monkeypatch.setattr("coldstart.run._resolve_bob", lambda: _FAKE_BOB_EXE)
     monkeypatch.setenv("BOB_API_KEY", "test")
 
     out = tmp_path / "runs.json"
@@ -543,6 +561,7 @@ def test_dry_run_prints_commands_without_running(tmp_path, monkeypatch, capsys):
         raise AssertionError("subprocess.run must not be called during --dry-run")
 
     monkeypatch.setattr("coldstart.run.subprocess.run", _tripwire)
+    monkeypatch.setattr("coldstart.run._resolve_bob", lambda: _FAKE_BOB_EXE)
     # No API key needed for dry-run — the key-loading step is bypassed.
 
     out = tmp_path / "runs.json"
@@ -561,3 +580,145 @@ def test_dry_run_prints_commands_without_running(tmp_path, monkeypatch, capsys):
     assert "bob" in stdout
     assert "--format" in stdout
     assert "--max-cost" in stdout
+
+
+# ---------------------------------------------------------------------------
+# New tests: executable resolution, dry-run workspace, bob_executable field
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.contract
+def test_argv0_is_absolute_path(tmp_path, monkeypatch):
+    """The command's argv[0] must be an absolute path, never the bare string 'bob'.
+
+    On Windows, CreateProcess cannot resolve 'bob' to bob.CMD without a full
+    path. This test pins the invariant so a future refactor cannot regress it.
+    """
+    captured_argv: list[list[str]] = []
+
+    def _capture(*a, **kw):
+        captured_argv.append(list(a[0]))
+        return _make_fake_proc(_CLEAN_NDJSON)
+
+    monkeypatch.setattr("coldstart.run.subprocess.run", _capture)
+    monkeypatch.setattr("coldstart.run._resolve_bob", lambda: _FAKE_BOB_EXE)
+    monkeypatch.setenv("BOB_API_KEY", "test")
+
+    run(
+        steps_path=_write_steps(tmp_path, n=1),
+        pristine=_make_pristine(tmp_path),
+        workspaces=tmp_path / "ws",
+        recordings=tmp_path / "rec",
+        output_path=tmp_path / "runs.json",
+        budget=999.0,
+    )
+
+    assert captured_argv, "subprocess.run was never called"
+    argv0 = captured_argv[0][0]
+    assert Path(argv0).is_absolute(), (
+        f"argv[0] must be an absolute path, got {argv0!r}. "
+        "A bare 'bob' fails on Windows with WinError 2 because the installer "
+        "provides bob.CMD, not bob.exe."
+    )
+
+
+@pytest.mark.contract
+def test_missing_bob_executable_exits_before_any_step(tmp_path, monkeypatch):
+    """When bob is not on PATH, run() must exit with a clear message before
+    attempting any step. Fourteen identical WinError 2 failures is not helpful.
+    """
+    subprocess_called = []
+
+    def _tripwire(*a, **kw):
+        subprocess_called.append(True)
+        raise AssertionError("subprocess.run was called despite bob being absent")
+
+    monkeypatch.setattr("coldstart.run.subprocess.run", _tripwire)
+    monkeypatch.setattr("coldstart.run._resolve_bob", lambda: (_ for _ in ()).throw(
+        SystemExit("Bob Shell is not on PATH.")
+    ))
+    monkeypatch.setenv("BOB_API_KEY", "test")
+
+    with pytest.raises(SystemExit, match="not on PATH"):
+        run(
+            steps_path=_write_steps(tmp_path, n=2),
+            pristine=_make_pristine(tmp_path),
+            workspaces=tmp_path / "ws",
+            recordings=tmp_path / "rec",
+            output_path=tmp_path / "runs.json",
+            budget=999.0,
+        )
+
+    assert not subprocess_called, "no step should start when bob is absent"
+
+
+def test_dry_run_creates_workspace_directories(tmp_path, monkeypatch):
+    """--dry-run must prepare (copy) the workspaces even though it runs nothing.
+
+    This is the whole point of a dry run: verify the workspace copy works before
+    spending money. If the copy path is never exercised, the dry run is useless.
+    """
+    monkeypatch.setattr(
+        "coldstart.run.subprocess.run",
+        lambda *a, **kw: (_ for _ in ()).throw(
+            AssertionError("subprocess.run must not be called in dry-run")
+        ),
+    )
+    monkeypatch.setattr("coldstart.run._resolve_bob", lambda: _FAKE_BOB_EXE)
+
+    pristine = _make_pristine(tmp_path)
+    ws_dir = tmp_path / "ws"
+
+    run(
+        steps_path=_write_steps(tmp_path, n=2),
+        pristine=pristine,
+        workspaces=ws_dir,
+        recordings=tmp_path / "rec",
+        output_path=tmp_path / "runs.json",
+        dry_run=True,
+        budget=999.0,
+    )
+
+    assert (ws_dir / "ws-01").is_dir(), "ws-01 must be created by dry-run"
+    assert (ws_dir / "ws-02").is_dir(), "ws-02 must be created by dry-run"
+
+
+def test_runs_json_carries_bob_executable(tmp_path, monkeypatch):
+    """runs.json must include bob_executable with the resolved absolute path."""
+    monkeypatch.setattr(
+        "coldstart.run.subprocess.run",
+        lambda *a, **kw: _make_fake_proc(_CLEAN_NDJSON),
+    )
+    monkeypatch.setattr("coldstart.run._resolve_bob", lambda: _FAKE_BOB_EXE)
+    monkeypatch.setenv("BOB_API_KEY", "test")
+
+    out = tmp_path / "runs.json"
+    run(
+        steps_path=_write_steps(tmp_path, n=1),
+        pristine=_make_pristine(tmp_path),
+        workspaces=tmp_path / "ws",
+        recordings=tmp_path / "rec",
+        output_path=out,
+        budget=999.0,
+    )
+
+    doc = json.loads(out.read_text(encoding="utf-8"))
+    assert "bob_executable" in doc, "runs.json must carry bob_executable"
+    assert doc["bob_executable"] == _FAKE_BOB_EXE
+
+
+def test_runs_json_without_bob_executable_still_validates(tmp_path):
+    """An older runs.json without bob_executable must still pass validate_runs.
+
+    The field is optional — existing artifacts must not break.
+    """
+    from coldstart.schema import RUNS_SCHEMA, validate_runs
+
+    doc = {
+        "schema": RUNS_SCHEMA,
+        "bob_version": "2.0.5",
+        "recorded_at": "2026-09-26T16:30:00+00:00",
+        "max_cost": 1.5,
+        "runs": [],
+    }
+    validate_runs(doc)  # must not raise

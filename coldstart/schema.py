@@ -133,6 +133,9 @@ def validate_runs(doc: Any, where: str = "runs.json") -> dict:
     always the literal ``"success"`` -- Bob's own bundle hardcodes it in both result
     emitters, and a capped run that wrote nothing still reports it with exit code 0.
     Failure lives in ``error_frames`` and ``capped``. See docs/ARCHITECTURE.md.
+
+    ``bob_executable`` is optional -- older artifacts written before the Windows
+    fix do not carry it, and they must still validate cleanly.
     """
     if _require(doc, "schema", str, where) != RUNS_SCHEMA:
         _fail(f"{where}.schema", f"expected {RUNS_SCHEMA!r}, got {doc['schema']!r}")
@@ -140,6 +143,15 @@ def validate_runs(doc: Any, where: str = "runs.json") -> dict:
     _require(doc, "bob_version", str, where)
     _require(doc, "recorded_at", str, where)
     _require(doc, "max_cost", (int, float), where)
+
+    # Optional field added in the Windows-executable fix.  When present it must
+    # be a string (an absolute path); when absent the artifact still validates.
+    if "bob_executable" in doc:
+        if not isinstance(doc["bob_executable"], str):
+            _fail(
+                f"{where}.bob_executable",
+                f"expected str, got {type(doc['bob_executable']).__name__}",
+            )
 
     runs = _require(doc, "runs", list, where)
     for i, run in enumerate(runs):

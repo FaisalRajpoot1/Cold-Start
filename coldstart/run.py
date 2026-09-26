@@ -47,6 +47,33 @@ _COST_LIMIT_RE = re.compile(r"reached the cost limit", re.IGNORECASE)
 
 
 # ---------------------------------------------------------------------------
+# Executable resolution
+# ---------------------------------------------------------------------------
+
+
+def _resolve_bob() -> str:
+    """Return the absolute path to the bob executable.
+
+    On Windows the installer creates a shim named bob.CMD, not bob.exe.
+    CreateProcess cannot resolve a bare "bob" to a .CMD file, so we must
+    pass the full path. shutil.which() handles the PATHEXT lookup that finds
+    bob.CMD on Windows (and bob / bob.sh on POSIX).
+
+    We exit immediately when bob is not found rather than starting fourteen
+    steps that will all fail with WinError 2. That is always a
+    user-environment problem, not a data problem.
+    """
+    exe = shutil.which("bob")
+    if exe is None:
+        raise SystemExit(
+            "Bob Shell is not on PATH.\n"
+            "Install it with:\n"
+            "  powershell -c \"irm -Uri https://bob.ibm.com/download/bobshell.ps1 | iex\""
+        )
+    return exe
+
+
+# ---------------------------------------------------------------------------
 # API-key helpers
 # ---------------------------------------------------------------------------
 
@@ -200,6 +227,7 @@ def _run_one_step(
     recordings: Path,
     max_cost: float,
     max_turns: int,
+    bob_exe: str,
     bob_env: dict[str, str],
     timeout: int = _BOB_TIMEOUT,
     dry_run: bool = False,
@@ -209,6 +237,11 @@ def _run_one_step(
     Returns a runs.json run-record (without step_id — caller adds it).
     On any failure the step is recorded with session_costs 0.0 and an
     error_frame so the error does not cascade to other steps.
+
+    ``bob_exe`` must be an absolute path returned by _resolve_bob(). On
+    Windows the bare string "bob" cannot be resolved by CreateProcess because
+    the installer provides a bob.CMD shim, not an .exe. Passing the absolute
+    path avoids WinError 2.
     """
     sid: int = step["id"]
     ws = workspaces / f"ws-{sid:02d}"
@@ -217,8 +250,9 @@ def _run_one_step(
 
     # Build the argv list. Every flag here has been verified to exist in Bob.
     # shell=False is explicit and non-negotiable (see AGENTS.md rule 2).
+    # argv[0] is the resolved absolute path, never the bare string "bob".
     cmd = [
-        "bob",
+        bob_exe,
         "run",
         "--format", "stream-json",
         "--max-cost", str(max_cost),
@@ -229,22 +263,9 @@ def _run_one_step(
         step["bob_prompt"],
     ]  # fmt: skip
 
-    if dry_run:
-        print(f"[step {sid:02d}] DRY-RUN: {' '.join(cmd)}")
-        return {
-            "task_id": "",
-            "ndjson": ndjson_rel,
-            "session_costs": 0.0,
-            "duration_ms": 0,
-            "tool_calls": 0,
-            "bob_status": "dry-run",
-            "error_frames": [],
-            "capped": False,
-            "bob_claim": "skipped",
-            "bob_final_message": "",
-        }
-
-    # --- 1. Prepare workspace ---
+    # --- 1. Prepare workspace (done for BOTH real runs and dry-run) ---
+    # dry-run is meant to test that the workspace preparation works before
+    # spending money. Skipping it here would leave the copy path untested.
     try:
         _prepare_workspace(pristine, ws)
     except OSError as exc:
@@ -258,6 +279,23 @@ def _run_one_step(
             "error_frames": [{"message": f"workspace preparation failed: {exc}"}],
             "capped": False,
             "bob_claim": "failed",
+            "bob_final_message": "",
+        }
+
+    # For dry-run: workspace is prepared above so the copy path is exercised,
+    # then we stop before touching the network or spending anything.
+    if dry_run:
+        print(f"[step {sid:02d}] DRY-RUN: {' '.join(cmd)}")
+        return {
+            "task_id": "",
+            "ndjson": ndjson_rel,
+            "session_costs": 0.0,
+            "duration_ms": 0,
+            "tool_calls": 0,
+            "bob_status": "dry-run",
+            "error_frames": [],
+            "capped": False,
+            "bob_claim": "skipped",
             "bob_final_message": "",
         }
 
@@ -382,6 +420,11 @@ def run(
     recordings_p = Path(recordings)
     recordings_p.mkdir(parents=True, exist_ok=True)
 
+    # Resolve the bob executable ONCE before starting any steps. On Windows the
+    # installer provides bob.CMD; CreateProcess cannot find it from a bare "bob".
+    # Failing here is better than all fourteen steps failing with WinError 2.
+    bob_exe = _resolve_bob()
+
     if not dry_run:
         api_key = _load_api_key()
         bob_env = {**os.environ, "BOB_API_KEY": api_key}
@@ -426,6 +469,7 @@ def run(
             recordings=recordings_p,
             max_cost=max_cost,
             max_turns=max_turns,
+            bob_exe=bob_exe,
             bob_env=bob_env,
             timeout=timeout,
             dry_run=dry_run,
@@ -465,6 +509,7 @@ def run(
     out_doc = {
         "schema": RUNS_SCHEMA,
         "bob_version": bob_version,
+        "bob_executable": bob_exe,
         "recorded_at": recorded_at,
         "max_cost": max_cost,
         "runs": run_records,

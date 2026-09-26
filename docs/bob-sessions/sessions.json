@@ -96,20 +96,20 @@
       "usd": 0.0
     },
     {
-      "bobcoins": 3.653306,
-      "context_tokens": 63247,
+      "bobcoins": 14.844858,
+      "context_tokens": 135115,
       "created_at": 1790424569429,
       "created_utc": "2026-09-26T12:09:29.429000+00:00",
       "id": "c55b348f03623ab266c86ce7153ab1f9",
-      "messages": 88,
+      "messages": 199,
       "prompt_prefix": "Read AGENTS.md and docs/ARCHITECTURE.md first, then implement coldstart/check.py.",
       "status": "active",
       "task_type": "normal",
-      "updated_at": 1790425926143,
-      "usd": 1.8267
+      "updated_at": 1790429182031,
+      "usd": 7.4224
     }
   ],
   "source": "IBM Bob local task database (read-only)",
-  "total_bobcoins": 3.95453,
-  "total_usd": 1.9773
+  "total_bobcoins": 15.146082,
+  "total_usd": 7.573
 }
