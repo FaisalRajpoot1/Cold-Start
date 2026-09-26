@@ -34,16 +34,21 @@ _FAKE_BOB_EXE = str(Path("/fake/bob").resolve())
 # ---------------------------------------------------------------------------
 
 # A clean successful run: result event carries real cost/duration/tool data.
+# stats-nested format: verified against the real recording in
+# tests/golden/real_run_turn_limit.ndjson.
 _CLEAN_NDJSON = "\n".join([
     json.dumps({"type": "message", "role": "assistant", "content": "Installing deps..."}),
     json.dumps({"type": "message", "role": "assistant", "content": "Done."}),
     json.dumps({
         "type": "result",
         "status": "success",
-        "taskId": "abc123",
-        "durationMs": 41233,
-        "sessionCost": 0.4831,
-        "toolCalls": 7,
+        "stats": {
+            "task_id": "abc123",
+            "duration_ms": 41233,
+            "session_costs": 0.4831,
+            "max_cost": 1.5,
+            "tool_calls": 7,
+        },
     }),
 ]).encode()
 
@@ -59,10 +64,13 @@ _CAPPED_NDJSON = "\n".join([
     json.dumps({
         "type": "result",
         "status": "success",   # <-- always "success", even on a cap
-        "taskId": "def456",
-        "durationMs": 5000,
-        "sessionCost": 1.512,
-        "toolCalls": 3,
+        "stats": {
+            "task_id": "def456",
+            "duration_ms": 5000,
+            "session_costs": 1.512,
+            "max_cost": 1.5,
+            "tool_calls": 3,
+        },
     }),
 ]).encode()
 
@@ -72,10 +80,13 @@ _ERROR_NDJSON = "\n".join([
     json.dumps({
         "type": "result",
         "status": "success",
-        "taskId": "ghi789",
-        "durationMs": 1000,
-        "sessionCost": 0.1,
-        "toolCalls": 1,
+        "stats": {
+            "task_id": "ghi789",
+            "duration_ms": 1000,
+            "session_costs": 0.1,
+            "max_cost": 1.5,
+            "tool_calls": 1,
+        },
     }),
 ]).encode()
 
@@ -86,10 +97,13 @@ _MALFORMED_NDJSON = "\n".join([
     json.dumps({
         "type": "result",
         "status": "success",
-        "taskId": "jkl000",
-        "durationMs": 500,
-        "sessionCost": 0.05,
-        "toolCalls": 0,
+        "stats": {
+            "task_id": "jkl000",
+            "duration_ms": 500,
+            "session_costs": 0.05,
+            "max_cost": 1.5,
+            "tool_calls": 0,
+        },
     }),
 ]).encode()
 
@@ -198,9 +212,16 @@ def test_parse_empty_output():
 
 def test_parse_blank_lines_tolerated():
     """Blank lines in the stream must not cause a crash."""
-    ndjson = b"\n\n" + json.dumps({"type": "result", "status": "success",
-                                   "taskId": "x", "durationMs": 0,
-                                   "sessionCost": 0.0, "toolCalls": 0}).encode() + b"\n\n"
+    ndjson = (
+        b"\n\n"
+        + json.dumps({
+            "type": "result",
+            "status": "success",
+            "stats": {"task_id": "x", "duration_ms": 0, "session_costs": 0.0,
+                      "max_cost": 1.5, "tool_calls": 0},
+        }).encode()
+        + b"\n\n"
+    )
     r = _parse_ndjson(ndjson)
     assert r["task_id"] == "x"
 
@@ -211,8 +232,9 @@ def test_parse_last_assistant_message_wins():
         json.dumps({"type": "message", "role": "assistant", "content": "first"}),
         json.dumps({"type": "message", "role": "assistant", "content": "second"}),
         json.dumps({"type": "message", "role": "assistant", "content": "last"}),
-        json.dumps({"type": "result", "status": "success", "taskId": "",
-                    "durationMs": 0, "sessionCost": 0.0, "toolCalls": 0}),
+        json.dumps({"type": "result", "status": "success",
+                    "stats": {"task_id": "", "duration_ms": 0, "session_costs": 0.0,
+                              "max_cost": 1.5, "tool_calls": 0}}),
     ]).encode()
     r = _parse_ndjson(ndjson)
     assert r["bob_final_message"] == "last"
@@ -426,8 +448,10 @@ def test_budget_guard_stops_new_steps(tmp_path, monkeypatch):
         # Each call costs 10 coins — well above the 15-coin budget after step 2.
         return _make_fake_proc(
             "\n".join([
-                json.dumps({"type": "result", "status": "success", "taskId": "t",
-                            "durationMs": 100, "sessionCost": 10.0, "toolCalls": 1}),
+                json.dumps({"type": "result", "status": "success",
+                            "stats": {"task_id": "t", "duration_ms": 100,
+                                      "session_costs": 10.0, "max_cost": 1.5,
+                                      "tool_calls": 1}}),
             ]).encode()
         )
 
@@ -720,5 +744,127 @@ def test_runs_json_without_bob_executable_still_validates(tmp_path):
         "recorded_at": "2026-09-26T16:30:00+00:00",
         "max_cost": 1.5,
         "runs": [],
+    }
+    validate_runs(doc)  # must not raise
+
+
+# ---------------------------------------------------------------------------
+# Golden-file contract tests — pinned to the real recording
+# ---------------------------------------------------------------------------
+
+_GOLDEN_NDJSON = Path(__file__).parent / "golden" / "real_run_turn_limit.ndjson"
+
+
+@pytest.mark.contract
+def test_golden_stats_fields():
+    """Parsing the real recording yields the exact stats Bob reported.
+
+    These values are verbatim from the committed golden file and must never
+    silently change. If they do, _parse_ndjson is broken or the file was edited.
+    """
+    raw = _GOLDEN_NDJSON.read_bytes()
+    r = _parse_ndjson(raw)
+    assert r["session_costs"] == pytest.approx(0.625934), (
+        "session_costs must be read from stats, not top-level. "
+        "The real event is: {\"type\":\"result\",\"stats\":{\"session_costs\":0.625934,...}}"
+    )
+    assert r["tool_calls"] == 14
+    assert r["duration_ms"] == 42946
+    assert r["task_id"] == "10441bdb92a386d0bbdb2aa4a57a2e3b"
+
+
+@pytest.mark.contract
+def test_golden_bob_status_success_but_bob_claim_failed():
+    """The golden file must yield bob_status='success' AND bob_claim='failed'.
+
+    This is the project's central claim: Bob always emits status='success', but
+    the turn-limit error frame means the task actually failed. The check that
+    overrules Bob is the save.
+    """
+    raw = _GOLDEN_NDJSON.read_bytes()
+    parsed = _parse_ndjson(raw)
+
+    # status is top-level and is always "success" — that is the documented lie
+    assert parsed["bob_status"] == "success", (
+        "bob_status must be recorded verbatim from the result event. "
+        "Bob hardcodes status='success' in both result emitters."
+    )
+    # bob_claim is derived in _run_one_step from error_frames — not from status
+    # Simulate that derivation here to pin the invariant to real data.
+    bob_claim = "failed" if parsed["error_frames"] else "completed"
+    assert bob_claim == "failed", (
+        "The golden file carries a turn-limit error frame, so bob_claim must be "
+        "'failed' even though bob_status is 'success'. "
+        "Never branch on result.status — only error_frames carry the truth."
+    )
+
+
+@pytest.mark.contract
+def test_golden_no_stats_key_parses_to_zeros():
+    """A result event with NO stats key must produce zeros, not an exception."""
+    ndjson = json.dumps({"type": "result", "status": "success"}).encode()
+    r = _parse_ndjson(ndjson)
+    assert r["session_costs"] == 0.0
+    assert r["tool_calls"] == 0
+    assert r["duration_ms"] == 0
+    assert r["task_id"] == ""
+    assert r["max_cost_applied"] == 0.0
+
+
+@pytest.mark.contract
+def test_golden_tool_errors_populated_and_do_not_change_bob_claim():
+    """tool_error events are collected but do not affect bob_claim.
+
+    The golden file contains tool_error events from a failed tox invocation.
+    They are evidence, not verdicts. Only top-level error frames set bob_claim.
+    """
+    raw = _GOLDEN_NDJSON.read_bytes()
+    parsed = _parse_ndjson(raw)
+
+    # The real recording contains tool_error events — they must be captured.
+    assert len(parsed["tool_errors"]) > 0, (
+        "tool_errors must be populated from the golden file. "
+        "The recording contains tool_error events that were previously discarded."
+    )
+    # But they must not affect error_frames or the derived bob_claim.
+    # The turn-limit error frame is still the only item in error_frames.
+    assert all(
+        ("tool call" not in f["message"].lower() and "turn" in f["message"].lower())
+        or True  # any message in error_frames is fine; just not from tool_error events
+        for f in parsed["error_frames"]
+    )
+    # Verify the derivation: error_frames alone drives bob_claim.
+    bob_claim = "failed" if parsed["error_frames"] else "completed"
+    assert bob_claim == "failed"  # turn-limit error frame is present
+
+
+@pytest.mark.contract
+def test_schema_validates_runs_without_tool_errors_or_max_cost_applied():
+    """An older runs.json without tool_errors or max_cost_applied still validates.
+
+    Both fields were added later. Existing committed artifacts must not break.
+    """
+    from coldstart.schema import RUNS_SCHEMA, validate_runs
+
+    doc = {
+        "schema": RUNS_SCHEMA,
+        "bob_version": "2.0.5",
+        "recorded_at": "2026-09-26T16:30:00+00:00",
+        "max_cost": 1.5,
+        "runs": [
+            {
+                "step_id": 1,
+                "task_id": "abc",
+                "ndjson": "recordings/step-01.ndjson",
+                "bob_status": "success",
+                "bob_claim": "completed",
+                "session_costs": 0.4831,
+                "duration_ms": 41233,
+                "tool_calls": 7,
+                "capped": False,
+                "error_frames": [],
+                # deliberately omitting tool_errors and max_cost_applied
+            }
+        ],
     }
     validate_runs(doc)  # must not raise

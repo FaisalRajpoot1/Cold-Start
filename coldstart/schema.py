@@ -183,6 +183,27 @@ def validate_runs(doc: Any, where: str = "runs.json") -> dict:
         if run["capped"] and not frames:
             _fail(f"{at}.capped", "marked capped but carries no error_frames to prove it")
 
+        # Optional: tool_errors was added when the real recording revealed
+        # {"type":"tool_error",...} events. Older artifacts omit the field and
+        # must still validate.
+        if "tool_errors" in run:
+            if not isinstance(run["tool_errors"], list):
+                _fail(
+                    f"{at}.tool_errors",
+                    f"expected list, got {type(run['tool_errors']).__name__}",
+                )
+            for j, te in enumerate(run["tool_errors"]):
+                _require(te, "message", str, f"{at}.tool_errors[{j}]")
+
+        # Optional: max_cost_applied was added alongside tool_errors. Older
+        # artifacts omit the field and must still validate.
+        if "max_cost_applied" in run:
+            if not isinstance(run["max_cost_applied"], (int, float)):
+                _fail(
+                    f"{at}.max_cost_applied",
+                    f"expected int/float, got {type(run['max_cost_applied']).__name__}",
+                )
+
     return doc
 
 

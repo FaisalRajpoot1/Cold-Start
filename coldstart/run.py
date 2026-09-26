@@ -135,21 +135,31 @@ def _parse_ndjson(raw: bytes) -> dict:
     """Parse the raw stdout from a `bob run --format stream-json` invocation.
 
     Returns a dict with:
-        task_id           str   — from the "result" event
-        duration_ms       int   — from the "result" event (converted from seconds)
-        session_costs     float — from the "result" event
-        tool_calls        int   — from the "result" event
-        bob_status        str   — verbatim from the "result" event (always "success")
+        task_id           str   — from result.stats
+        duration_ms       int   — from result.stats (already milliseconds, no conversion)
+        session_costs     float — from result.stats
+        tool_calls        int   — from result.stats
+        max_cost_applied  float — from result.stats (the cap that was in force)
+        bob_status        str   — verbatim from the result event top-level (always "success")
         error_frames      list  — every {"type":"error",...} object in order
+        tool_errors       list  — every {"type":"tool_error",...} object in order
         capped            bool  — True if any error message matches the cost-limit wording
         bob_final_message str   — content of the LAST assistant message event
+
+    WHY stats-nested: verified against a real recording committed as
+    tests/golden/real_run_turn_limit.ndjson. The result event shape is:
+        {"type":"result","status":"success","stats":{"task_id":...,"session_costs":...}}
+    The old camelCase top-level spellings (taskId, durationMs, sessionCost, toolCalls)
+    never matched the real event, so every run was silently reported as 0 cost.
     """
     task_id = ""
     duration_ms = 0
     session_costs = 0.0
     tool_calls = 0
+    max_cost_applied = 0.0
     bob_status = "unknown"
     error_frames: list[dict] = []
+    tool_errors: list[dict] = []
     bob_final_message = ""
 
     for raw_line in raw.splitlines():
@@ -169,23 +179,37 @@ def _parse_ndjson(raw: bytes) -> dict:
         kind = obj.get("type")
 
         if kind == "result":
-            task_id = obj.get("taskId") or obj.get("task_id") or ""
-            # Bob reports duration in milliseconds in the result event.
-            duration_ms = int(obj.get("durationMs") or obj.get("duration_ms") or 0)
-            # session_costs may be labelled "cost" or "sessionCost" depending on
-            # the Bob version; accept all three spellings.
-            session_costs = float(
-                obj.get("sessionCost")
-                or obj.get("session_costs")
-                or obj.get("cost")
-                or 0.0
-            )
-            tool_calls = int(obj.get("toolCalls") or obj.get("tool_calls") or 0)
+            # All cost/timing fields live under "stats" — verified in the real
+            # recording at tests/golden/real_run_turn_limit.ndjson. The old
+            # top-level camelCase fallbacks (taskId, durationMs, sessionCost)
+            # never matched and silently zeroed everything out.
+            stats = obj.get("stats") or {}
+            task_id = str(stats.get("task_id") or "")
+            # duration_ms is already in milliseconds — do NOT multiply.
+            duration_ms = int(stats.get("duration_ms") or 0)
+            session_costs = float(stats.get("session_costs") or 0.0)
+            tool_calls = int(stats.get("tool_calls") or 0)
+            max_cost_applied = float(stats.get("max_cost") or 0.0)
+            # status is genuinely top-level (always "success" — see ARCHITECTURE.md)
             bob_status = str(obj.get("status") or "success")
 
         elif kind == "error":
             msg = obj.get("message") or obj.get("error") or str(obj)
             error_frames.append({"message": str(msg)})
+
+        elif kind == "tool_result" and obj.get("status") == "error":
+            # tool_result events with status="error" are normal mid-task tool
+            # failures (e.g. a command that returned exit code 1). The error
+            # detail is in obj["error"]["message"]. These do NOT affect bob_claim;
+            # only a top-level "error" frame signals task failure.
+            # The real recording (tests/golden/real_run_turn_limit.ndjson) carries
+            # two of these from failed tox/python invocations.
+            err_obj = obj.get("error") or {}
+            if isinstance(err_obj, dict):
+                msg = err_obj.get("message") or str(err_obj)
+            else:
+                msg = str(err_obj)
+            tool_errors.append({"message": str(msg)})
 
         elif kind == "message" and obj.get("role") == "assistant":
             # Keep updating — we want the LAST assistant message.
@@ -207,8 +231,10 @@ def _parse_ndjson(raw: bytes) -> dict:
         "duration_ms": duration_ms,
         "session_costs": session_costs,
         "tool_calls": tool_calls,
+        "max_cost_applied": max_cost_applied,
         "bob_status": bob_status,
         "error_frames": error_frames,
+        "tool_errors": tool_errors,
         "capped": capped,
         "bob_final_message": bob_final_message,
     }
@@ -380,8 +406,10 @@ def _run_one_step(
         "session_costs": parsed["session_costs"],
         "duration_ms": parsed["duration_ms"] or duration_ms,
         "tool_calls": parsed["tool_calls"],
+        "max_cost_applied": parsed["max_cost_applied"],
         "bob_status": parsed["bob_status"],
         "error_frames": parsed["error_frames"],
+        "tool_errors": parsed["tool_errors"],
         "capped": parsed["capped"],
         "bob_claim": bob_claim,
         "bob_final_message": parsed["bob_final_message"],
@@ -401,7 +429,7 @@ def run(
     recordings: str | Path = "recordings",
     output_path: str | Path = "runs.json",
     max_cost: float = 1.5,
-    max_turns: int = 12,
+    max_turns: int = 25,
     concurrency: int = 4,
     budget: float = 15.0,
     timeout: int = _BOB_TIMEOUT,
