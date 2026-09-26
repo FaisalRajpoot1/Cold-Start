@@ -1,0 +1,63 @@
+[project]
+name = "coldstart"
+version = "0.1.0"
+description = "Make IBM Bob perform your onboarding doc, then price what it wastes."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "Muhammad Faisal" }]
+
+# Deliberately ZERO runtime dependencies.
+#
+# Every module is stdlib-only: json, subprocess, pathlib, shutil, argparse,
+# concurrent.futures, hashlib, html. Nothing to install on a judge's machine,
+# nothing to break at hour 25, and `render.py` has no way to reach the network
+# even by accident.
+dependencies = []
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "ruff>=0.6",
+]
+
+[project.scripts]
+coldstart = "coldstart.cli:main"
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["coldstart*"]
+
+# ---------------------------------------------------------------------------
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q --strict-markers"
+markers = [
+    "golden: asserts a module's output against a committed golden file",
+    "contract: asserts an assumption about an EXTERNAL tool (Bob, git). These are the tests that must fail loudly if Bob ships a new version mid-build.",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = [
+    "E", "F", "W",   # pycodestyle + pyflakes
+    "I",             # import order
+    "B",             # bugbear
+    "S",             # bandit: security
+    "PTH",           # prefer pathlib
+    "RUF",
+]
+ignore = [
+    "S101",  # assert is how the contract tests state their assumptions
+]
+
+[tool.ruff.lint.per-file-ignores]
+# Tests may use subprocess freely and may hardcode paths.
+"tests/*" = ["S603", "S607"]

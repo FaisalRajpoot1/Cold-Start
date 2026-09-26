@@ -1,0 +1,10 @@
+bob.key
+*.key
+.env
+.env.*
+!.env.example
+target/
+__pycache__/
+*.pyc
+.venv/
+web/out/
