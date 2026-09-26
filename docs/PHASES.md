@@ -20,7 +20,23 @@ did not exist until days after the research finished.
 | Resource | Total | Reserved | Free |
 |---|---|---|---|
 | Hours | 27.5 | 6 for video, slides, statements, submission | **21.5 for build** |
-| Bobcoins | 39.7 | 15 for the re-record after the patch | **~20 for the first pass** |
+| Bobcoins | 39.7 | see the three-way split below | |
+
+## Bobcoin split — revised 2026-09-26
+
+**The brief requires Bob to have built this, with task-session screenshots as evidence.**
+So coins now fund three things, not two.
+
+| Purpose | Coins | Note |
+|---|---|---|
+| **Bob writes the feature modules** | **12** | `check.py`, `split.py`, `run.py`, `render.py`, in Bob IDE, one task session each |
+| **The real measured pass** | **15** | 14 steps at `--max-cost 1.5` |
+| **Re-record after the patch** | **12** | Only the red steps need re-running |
+
+**Working method.** Specs live in `docs/bob-tasks/`. Bob implements from the spec in Bob IDE;
+the screenshot is captured; the code is then reviewed and tested here. This is not theatre --
+it produces a genuinely strong Usage Statement, real evidence, and `AGENTS.md` gives Bob the
+contracts so the code lands close to correct the first time.
 
 **Submission assets are reserved time, not leftover time.** Both previous entries left them
 to the end. One of them has an unticked submission checkbox to this day.
