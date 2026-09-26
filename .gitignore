@@ -12,3 +12,7 @@ target/_pristine/
 target/ws-*/
 target/_patched/
 target-after/
+node_modules/
+video/frames/
+video/out/
+video/stills/
