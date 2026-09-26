@@ -160,7 +160,7 @@ def _parse_ndjson(raw: bytes) -> dict:
     bob_status = "unknown"
     error_frames: list[dict] = []
     tool_errors: list[dict] = []
-    bob_final_message = ""
+    message_chunks: list[str] = []
 
     for raw_line in raw.splitlines():
         line = raw_line.strip()
@@ -212,7 +212,13 @@ def _parse_ndjson(raw: bytes) -> dict:
             tool_errors.append({"message": str(msg)})
 
         elif kind == "message" and obj.get("role") == "assistant":
-            # Keep updating — we want the LAST assistant message.
+            # ACCUMULATE, do not replace.
+            #
+            # Bob streams one message event PER TOKEN: "Let", " me find", " the".
+            # Taking the last event therefore yields the last token, not the last
+            # message. A real recording produced bob_final_message =
+            # "UFF_GITHUB_TOKEN`." -- the tail of a word -- which is useless as
+            # evidence of what Bob claimed. Joining the chunks gives the answer.
             content = obj.get("content") or ""
             if isinstance(content, list):
                 # content can be a list of content blocks; join text blocks.
@@ -222,7 +228,10 @@ def _parse_ndjson(raw: bytes) -> dict:
                     if isinstance(block, dict) and block.get("type") == "text"
                 ]
                 content = "".join(parts)
-            bob_final_message = str(content)
+            message_chunks.append(str(content))
+
+    # Keep only the tail: the final answer, not the whole running commentary.
+    bob_final_message = "".join(message_chunks).strip()[-600:]
 
     capped = any(_COST_LIMIT_RE.search(f["message"]) for f in error_frames)
 

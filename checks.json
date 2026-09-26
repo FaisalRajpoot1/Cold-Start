@@ -1,0 +1,187 @@
+{
+  "checks": [
+    {
+      "cmd": [
+        "python",
+        "-c",
+        "import sys,pathlib,re;sys.exit(0 if pathlib.Path('tox.ini').exists() else 1)"
+      ],
+      "duration_ms": 46,
+      "exit_code": 0,
+      "stderr_tail": "",
+      "stdout_tail": "",
+      "step_id": 1,
+      "verdict": "pass"
+    },
+    {
+      "cmd": [
+        "python",
+        "-c",
+        "import sys,pathlib,re;sys.exit(0 if sys.version_info >= (3,10) else 1)"
+      ],
+      "duration_ms": 46,
+      "exit_code": 0,
+      "stderr_tail": "",
+      "stdout_tail": "",
+      "step_id": 2,
+      "verdict": "pass"
+    },
+    {
+      "cmd": [
+        "python",
+        "-c",
+        "import sys,pathlib,re;t=pathlib.Path('tox.ini').read_text(encoding='utf-8',errors='replace');sys.exit(0 if 'dbt{170,180,190,1100}' in t else 1)"
+      ],
+      "duration_ms": 47,
+      "exit_code": 0,
+      "stderr_tail": "",
+      "stdout_tail": "",
+      "step_id": 3,
+      "verdict": "pass"
+    },
+    {
+      "cmd": [
+        "python",
+        "-c",
+        "import sys,pathlib,re;sys.exit(0 if pathlib.Path('plugins/sqlfluff-plugin-example').exists() else 1)"
+      ],
+      "duration_ms": 46,
+      "exit_code": 0,
+      "stderr_tail": "",
+      "stdout_tail": "",
+      "step_id": 4,
+      "verdict": "pass"
+    },
+    {
+      "cmd": [
+        "python",
+        "-c",
+        "import sys,pathlib,re;t=pathlib.Path('tox.ini').read_text(encoding='utf-8',errors='replace');sys.exit(0 if '[testenv:linting]' in t else 1)"
+      ],
+      "duration_ms": 62,
+      "exit_code": 0,
+      "stderr_tail": "",
+      "stdout_tail": "",
+      "step_id": 5,
+      "verdict": "pass"
+    },
+    {
+      "cmd": [
+        "python",
+        "-c",
+        "import sys,pathlib,re;sys.exit(0 if pathlib.Path('test/generate_parse_fixture_yml.py').exists() else 1)"
+      ],
+      "duration_ms": 46,
+      "exit_code": 0,
+      "stderr_tail": "",
+      "stdout_tail": "",
+      "step_id": 6,
+      "verdict": "pass"
+    },
+    {
+      "cmd": [
+        "python",
+        "-c",
+        "import sys,pathlib,re;sys.exit(0 if pathlib.Path('utils/rustify.py').exists() else 1)"
+      ],
+      "duration_ms": 46,
+      "exit_code": 0,
+      "stderr_tail": "",
+      "stdout_tail": "",
+      "step_id": 7,
+      "verdict": "pass"
+    },
+    {
+      "cmd": [
+        "python",
+        "-c",
+        "import sys,pathlib,re;sys.exit(0 if pathlib.Path('test/core/parser/grammar_test.py').exists() else 1)"
+      ],
+      "duration_ms": 47,
+      "exit_code": 1,
+      "stderr_tail": "",
+      "stdout_tail": "",
+      "step_id": 8,
+      "verdict": "fail"
+    },
+    {
+      "cmd": [
+        "python",
+        "-c",
+        "import sys,pathlib,re;sys.exit(0 if pathlib.Path('test/rules/yaml_test_cases_test.py').exists() else 1)"
+      ],
+      "duration_ms": 46,
+      "exit_code": 0,
+      "stderr_tail": "",
+      "stdout_tail": "",
+      "step_id": 9,
+      "verdict": "pass"
+    },
+    {
+      "cmd": [
+        "python",
+        "-c",
+        "import sys,pathlib,re;sys.exit(0 if pathlib.Path('plugins/sqlfluff-templater-dbt/test/fixtures/dbt/profiles.yml').exists() else 1)"
+      ],
+      "duration_ms": 46,
+      "exit_code": 1,
+      "stderr_tail": "",
+      "stdout_tail": "",
+      "step_id": 10,
+      "verdict": "fail"
+    },
+    {
+      "cmd": [
+        "python",
+        "-c",
+        "import sys,pathlib,re;t=pathlib.Path('tox.ini').read_text(encoding='utf-8',errors='replace');sys.exit(0 if 'dbt019' in t else 1)"
+      ],
+      "duration_ms": 46,
+      "exit_code": 1,
+      "stderr_tail": "",
+      "stdout_tail": "",
+      "step_id": 11,
+      "verdict": "fail"
+    },
+    {
+      "cmd": [
+        "python",
+        "-c",
+        "import sys,pathlib,re;t=pathlib.Path('tox.ini').read_text(encoding='utf-8',errors='replace');sys.exit(0 if '[testenv:pre-commit]' in t else 1)"
+      ],
+      "duration_ms": 31,
+      "exit_code": 0,
+      "stderr_tail": "",
+      "stdout_tail": "",
+      "step_id": 12,
+      "verdict": "pass"
+    },
+    {
+      "cmd": [
+        "python",
+        "-c",
+        "import sys,pathlib,re;sys.exit(0 if pathlib.Path('docs/README.md').exists() else 1)"
+      ],
+      "duration_ms": 46,
+      "exit_code": 0,
+      "stderr_tail": "",
+      "stdout_tail": "",
+      "step_id": 13,
+      "verdict": "pass"
+    },
+    {
+      "cmd": [
+        "python",
+        "-c",
+        "import sys,pathlib,re;t=pathlib.Path('util.py').read_text(encoding='utf-8',errors='replace');sys.exit(0 if 'SQLFLUFF_GITHUB_TOKEN' in t else 1)"
+      ],
+      "duration_ms": 46,
+      "exit_code": 1,
+      "stderr_tail": "",
+      "stdout_tail": "",
+      "step_id": 14,
+      "verdict": "fail"
+    }
+  ],
+  "schema": "coldstart.checks/1"
+}

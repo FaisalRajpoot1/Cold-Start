@@ -175,7 +175,7 @@ def test_parse_clean_run():
     assert r["bob_status"] == "success"
     assert r["error_frames"] == []
     assert r["capped"] is False
-    assert r["bob_final_message"] == "Done."
+    assert r["bob_final_message"] == "Installing deps...Done."
 
 
 def test_parse_capped_run():
@@ -226,8 +226,14 @@ def test_parse_blank_lines_tolerated():
     assert r["task_id"] == "x"
 
 
-def test_parse_last_assistant_message_wins():
-    """bob_final_message is the LAST assistant message, not the first."""
+def test_parse_accumulates_streamed_chunks():
+    """bob_final_message JOINS the streamed chunks; it is not the last one.
+
+    Bob streams one message event per token. This test previously asserted that
+    the last event wins, which was my spec being wrong, not the code. A real
+    recording then produced bob_final_message = "UFF_GITHUB_TOKEN`." -- the tail
+    of a single word -- which is worthless as evidence of what Bob claimed.
+    """
     ndjson = "\n".join([
         json.dumps({"type": "message", "role": "assistant", "content": "first"}),
         json.dumps({"type": "message", "role": "assistant", "content": "second"}),
@@ -237,7 +243,7 @@ def test_parse_last_assistant_message_wins():
                               "max_cost": 1.5, "tool_calls": 0}}),
     ]).encode()
     r = _parse_ndjson(ndjson)
-    assert r["bob_final_message"] == "last"
+    assert r["bob_final_message"] == "firstsecondlast"
 
 
 # ---------------------------------------------------------------------------

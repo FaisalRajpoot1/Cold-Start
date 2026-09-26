@@ -1,0 +1,220 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Cold Start — sqlfluff/sqlfluff</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --paper:#FBFAF7; --paper-edge:#F2F0EA; --ink:#14110F; --muted:#8A8078;
+  --rule:#E0DCD5; --stamp:#C1272D; --wash:rgba(193,39,45,0.07);
+}
+*{box-sizing:border-box}
+body{
+  margin:0; background:var(--paper-edge); color:var(--ink);
+  font-family:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  font-size:15px; line-height:1.45;
+  -webkit-font-smoothing:antialiased;
+}
+.sheet{
+  max-width:720px; margin:0 auto; background:var(--paper);
+  padding:0 40px 44px;
+}
+/* The perforated edge. Two gradients, no image. */
+.perf{
+  height:14px; max-width:720px; margin:0 auto; background:var(--paper);
+  --z:linear-gradient(45deg,transparent 33.33%,var(--paper) 33.33%,
+        var(--paper) 66.66%,transparent 66.66%),
+      linear-gradient(-45deg,transparent 33.33%,var(--paper) 33.33%,
+        var(--paper) 66.66%,transparent 66.66%);
+}
+.perf.top{background:var(--paper-edge);background-image:var(--z);
+  background-size:14px 28px;background-position:0 -14px}
+.perf.bot{background:var(--paper-edge);background-image:var(--z);
+  background-size:14px 28px;background-position:0 0}
+h1{
+  font-family:"IBM Plex Mono",ui-monospace,"Cascadia Mono",Consolas,monospace;
+  font-size:15px; font-weight:600; letter-spacing:.22em; text-transform:uppercase;
+  margin:36px 0 2px;
+}
+.sub{font-size:13px;color:var(--muted);margin:0 0 2px}
+.meta{
+  font-family:"IBM Plex Mono",ui-monospace,Consolas,monospace;
+  font-size:11.5px; color:var(--muted); margin:14px 0 0; letter-spacing:.01em;
+}
+hr{border:0;border-top:1px solid var(--rule);margin:22px 0}
+hr.dot{border-top:1px dashed var(--rule)}
+table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
+td{padding:7px 0;vertical-align:baseline}
+.n{
+  font-family:"IBM Plex Mono",ui-monospace,Consolas,monospace;
+  font-size:12px;color:var(--muted);width:30px;
+}
+.what{padding-right:14px}
+.num{
+  font-family:"IBM Plex Mono",ui-monospace,Consolas,monospace;
+  text-align:right;white-space:nowrap;font-size:13.5px;
+  font-variant-numeric:tabular-nums;
+}
+.t{width:58px} .c{width:66px}
+tr.bad td{background:var(--wash)}
+tr.bad .what strong{text-decoration:line-through;text-decoration-thickness:1.5px}
+tr.bad .n,tr.bad .num{color:var(--stamp)}
+.why{
+  font-size:12.5px;color:var(--muted);padding:0 0 10px 30px;
+  font-family:"IBM Plex Mono",ui-monospace,Consolas,monospace;
+}
+tr.bad + tr.why-row .why{color:var(--stamp)}
+.flag{
+  font-family:"IBM Plex Mono",ui-monospace,Consolas,monospace;
+  font-size:10.5px;letter-spacing:.14em;color:var(--stamp);
+  border:1px solid var(--stamp);padding:1px 5px;margin-left:8px;white-space:nowrap;
+}
+.totals td{padding:5px 0;font-size:13.5px}
+.totals .lbl{
+  font-family:"IBM Plex Mono",ui-monospace,Consolas,monospace;
+  letter-spacing:.14em;font-size:11.5px;text-transform:uppercase;
+}
+.hero{margin:26px 0 4px}
+.hero .fig{
+  font-family:"IBM Plex Mono",ui-monospace,Consolas,monospace;
+  font-size:64px;line-height:1;font-weight:600;color:var(--stamp);
+  font-variant-numeric:tabular-nums;letter-spacing:-.02em;
+}
+.hero .cap{font-size:14px;color:var(--ink);margin-top:6px}
+.stamp{
+  display:inline-block;margin:26px 0 6px;padding:12px 20px;
+  border:3px double var(--stamp);color:var(--stamp);
+  font-family:"IBM Plex Mono",ui-monospace,Consolas,monospace;
+  font-size:13px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;
+  transform:rotate(-4deg);opacity:.9;line-height:1.5;
+  animation:land .18s ease-out;
+}
+@keyframes land{
+  from{opacity:0;transform:rotate(-4deg) scale(1.06)}
+  to{opacity:.9;transform:rotate(-4deg) scale(1)}
+}
+@media (prefers-reduced-motion:reduce){.stamp{animation:none}}
+.foot{
+  font-size:11.5px;color:var(--muted);margin-top:30px;
+  font-family:"IBM Plex Mono",ui-monospace,Consolas,monospace;line-height:1.7;
+}
+@media (max-width:640px){
+  .sheet{padding:0 16px 32px}
+  .hero .fig{font-size:46px}
+  .t{width:48px} .c{width:58px}
+}
+@media print{body{background:var(--paper)} .stamp{animation:none}}
+</style></head><body>
+<div class="perf top"></div><div class="sheet">
+<h1>Cold Start</h1>
+<p class="sub">Itemised cost of following CONTRIBUTING.md</p>
+<p class="meta">sqlfluff/sqlfluff @ c7401613<br>14 steps &middot; IBM Bob unknown &middot; recorded headless, replayed from committed transcripts</p>
+<hr>
+<table>
+<tr class="">
+<td class="n">01</td>
+<td class="what"><strong>Use tox to set up the development environment</strong></td>
+<td class="num t">0:13</td>
+<td class="num c">$0.05</td>
+</tr>
+<tr class="">
+<td class="n">02</td>
+<td class="what"><strong>Confirm the minimum supported Python version</strong></td>
+<td class="num t">0:11</td>
+<td class="num c">$0.05</td>
+</tr>
+<tr class="">
+<td class="n">03</td>
+<td class="what"><strong>Build the virtual environment with the dbt180 tox env</strong></td>
+<td class="num t">0:12</td>
+<td class="num c">$0.05</td>
+</tr>
+<tr class="">
+<td class="n">04</td>
+<td class="what"><strong>Install the example plugin in editable mode</strong></td>
+<td class="num t">0:11</td>
+<td class="num c">$0.05</td>
+</tr>
+<tr class="">
+<td class="n">05</td>
+<td class="what"><strong>Run a targeted tox environment</strong></td>
+<td class="num t">0:19</td>
+<td class="num c">$0.05</td>
+</tr>
+<tr class="">
+<td class="n">06</td>
+<td class="what"><strong>Regenerate the parse fixtures</strong></td>
+<td class="num t">0:07</td>
+<td class="num c">$0.03</td>
+</tr>
+<tr class="">
+<td class="n">07</td>
+<td class="what"><strong>Resync the Rust dialects</strong></td>
+<td class="num t">0:19</td>
+<td class="num c">$0.07</td>
+</tr>
+<tr class="bad">
+<td class="n">08</td>
+<td class="what"><strong>Run the grammar tests for an AnyOf() change</strong></td>
+<td class="num t">2:00</td>
+<td class="num c">$0.62</td>
+</tr>
+<tr class="">
+<td class="n">09</td>
+<td class="what"><strong>Run the yaml rule test cases</strong></td>
+<td class="num t">0:12</td>
+<td class="num c">$0.03</td>
+</tr>
+<tr class="bad">
+<td class="n">10</td>
+<td class="what"><strong>Find the dbt connection parameters</strong><span class="flag">OVERRULED</span></td>
+<td class="num t">0:13</td>
+<td class="num c">$0.05</td>
+</tr>
+<tr class="bad">
+<td class="n">11</td>
+<td class="what"><strong>Run the dbt templater tests</strong><span class="flag">OVERRULED</span></td>
+<td class="num t">0:35</td>
+<td class="num c">$0.16</td>
+</tr>
+<tr class="">
+<td class="n">12</td>
+<td class="what"><strong>Install the pre-commit hooks</strong></td>
+<td class="num t">0:14</td>
+<td class="num c">$0.05</td>
+</tr>
+<tr class="">
+<td class="n">13</td>
+<td class="what"><strong>Read the documentation website guide</strong></td>
+<td class="num t">0:15</td>
+<td class="num c">$0.07</td>
+</tr>
+<tr class="bad">
+<td class="n">14</td>
+<td class="what"><strong>Store the release token for the release script</strong><span class="flag">OVERRULED</span></td>
+<td class="num t">0:44</td>
+<td class="num c">$0.19</td>
+</tr>
+</table>
+<hr class="dot">
+<table class="totals">
+<tr><td class="lbl">Total</td><td class="num t">5:46</td><td class="num c">$1.51</td></tr>
+<tr><td class="lbl">Wasted</td><td class="num t">3:31</td><td class="num c">$1.02</td></tr>
+</table>
+<div class="hero">
+<div class="fig">$1.02</div>
+<div class="cap">wasted per new hire, on 4 steps that cannot work</div>
+</div>
+<div class="stamp">The check overruled Bob<br>on 3 of 13 claimed successes</div>
+<hr>
+<p class="foot">
+Every figure read from Bob&#39;s own headless result event. 
+Nothing is estimated.<br>
+1 Bobcoin = $0.50, IBM published rate. 
+Raw transcripts committed under recordings/.<br>
+Steps that worked are unmarked, as on any receipt. Only problems are marked.
+</p>
+</div><div class="perf bot"></div>
+</body></html>
