@@ -66,6 +66,7 @@ tr.bad .n,tr.bad .num{color:var(--stamp)}
   font-family:"IBM Plex Mono",ui-monospace,Consolas,monospace;
 }
 tr.bad + tr.why-row .why{color:var(--stamp)}
+.said{color:var(--muted);font-style:italic}
 .flag{
   font-family:"IBM Plex Mono",ui-monospace,Consolas,monospace;
   font-size:10.5px;letter-spacing:.14em;color:var(--stamp);
@@ -110,7 +111,7 @@ tr.bad + tr.why-row .why{color:var(--stamp)}
 <div class="perf top"></div><div class="sheet">
 <h1>Cold Start</h1>
 <p class="sub">Itemised cost of following CONTRIBUTING.md</p>
-<p class="meta">sqlfluff/sqlfluff @ c7401613<br>14 steps &middot; IBM Bob unknown &middot; recorded headless, replayed from committed transcripts</p>
+<p class="meta">sqlfluff/sqlfluff @ c7401613<br>14 steps &middot; IBM Bob 2.0.5 &middot; recorded headless, replayed from committed transcripts</p>
 <hr>
 <table>
 <tr class="">
@@ -161,6 +162,9 @@ tr.bad + tr.why-row .why{color:var(--stamp)}
 <td class="num t">2:00</td>
 <td class="num c">$0.62</td>
 </tr>
+<tr class="why-row"><td></td><td colspan="3" class="why">
+&#9492; checked for test/core/parser/grammar_test.py — not found
+</td></tr>
 <tr class="">
 <td class="n">09</td>
 <td class="what"><strong>Run the yaml rule test cases</strong></td>
@@ -173,12 +177,20 @@ tr.bad + tr.why-row .why{color:var(--stamp)}
 <td class="num t">0:13</td>
 <td class="num c">$0.05</td>
 </tr>
+<tr class="why-row"><td></td><td colspan="3" class="why">
+&#9492; checked for plugins/sqlfluff-templater-dbt/test/fixtures/dbt/profiles.yml — not found
+<br><span class="said">&#9492; Bob said: &ldquo;… &#x27;localhost&#x27;)`, so you can point it at a remote instance by setting the `POSTGRES_HOST` environment variable — otherwise it defaults to `localhost`.&rdquo;</span>
+</td></tr>
 <tr class="bad">
 <td class="n">11</td>
 <td class="what"><strong>Run the dbt templater tests</strong><span class="flag">OVERRULED</span></td>
 <td class="num t">0:35</td>
 <td class="num c">$0.16</td>
 </tr>
+<tr class="why-row"><td></td><td colspan="3" class="why">
+&#9492; checked for a tox environment named dbt019, in tox.ini — not found
+<br><span class="said">&#9492; Bob said: &ldquo;… -- plugins/sqlfluff-templater-dbt ``` (substituting whichever dbt version — `170`, `180`, `190`, or `1100` — you actually want to test against.)&rdquo;</span>
+</td></tr>
 <tr class="">
 <td class="n">12</td>
 <td class="what"><strong>Install the pre-commit hooks</strong></td>
@@ -197,6 +209,10 @@ tr.bad + tr.why-row .why{color:var(--stamp)}
 <td class="num t">0:44</td>
 <td class="num c">$0.19</td>
 </tr>
+<tr class="why-row"><td></td><td colspan="3" class="why">
+&#9492; checked for SQLFLUFF_GITHUB_TOKEN, anywhere in util.py — not found
+<br><span class="said">&#9492; Bob said: &ldquo;… fix is to pick one name and make both files agree — either rename the env var in the checklist to `GITHUB_TOKEN`, or update the script to read `SQLFLUFF_GITHUB_TOKEN`.&rdquo;</span>
+</td></tr>
 </table>
 <hr class="dot">
 <table class="totals">

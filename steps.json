@@ -153,7 +153,7 @@
           "-c",
           "import sys,pathlib,re;sys.exit(0 if pathlib.Path('test/core/parser/grammar_test.py').exists() else 1)"
         ],
-        "describes": "the grammar test file the guide names"
+        "describes": "test/core/parser/grammar_test.py"
       },
       "doc_lines": [
         300,
@@ -193,7 +193,7 @@
           "-c",
           "import sys,pathlib,re;sys.exit(0 if pathlib.Path('plugins/sqlfluff-templater-dbt/test/fixtures/dbt/profiles.yml').exists() else 1)"
         ],
-        "describes": "the profiles.yml at the documented path"
+        "describes": "plugins/sqlfluff-templater-dbt/test/fixtures/dbt/profiles.yml"
       },
       "doc_lines": [
         307,
@@ -213,7 +213,7 @@
           "-c",
           "import sys,pathlib,re;t=pathlib.Path('tox.ini').read_text(encoding='utf-8',errors='replace');sys.exit(0 if 'dbt019' in t else 1)"
         ],
-        "describes": "the dbt019 tox environment the command requires"
+        "describes": "a tox environment named dbt019, in tox.ini"
       },
       "doc_lines": [
         314,
@@ -273,7 +273,7 @@
           "-c",
           "import sys,pathlib,re;t=pathlib.Path('util.py').read_text(encoding='utf-8',errors='replace');sys.exit(0 if 'SQLFLUFF_GITHUB_TOKEN' in t else 1)"
         ],
-        "describes": "the release script reads the variable the guide names"
+        "describes": "SQLFLUFF_GITHUB_TOKEN, anywhere in util.py"
       },
       "doc_lines": [
         376,

@@ -21,7 +21,7 @@ import json
 from datetime import datetime, timezone
 from pathlib import Path
 
-from coldstart.run import _parse_ndjson
+from coldstart.run import _parse_ndjson, bob_version_from_binary
 from coldstart.schema import RUNS_SCHEMA, dump_validated, load_validated
 
 
@@ -35,10 +35,15 @@ def reparse(steps_path: Path, recordings: Path, out_path: Path, previous: Path |
         try:
             old = json.loads(previous.read_text(encoding="utf-8"))
             for k in list(meta):
-                if old.get(k) is not None:
-                    meta[k] = old[k]
+                v = old.get(k)
+                # "unknown" is an absence wearing a value. Do not carry it
+                # forward, or the receipt keeps printing "IBM Bob unknown".
+                if v is not None and v != "unknown":
+                    meta[k] = v
         except (json.JSONDecodeError, OSError):
             pass
+    if meta["bob_version"] in (None, "unknown"):
+        meta["bob_version"] = bob_version_from_binary()
     if not meta["recorded_at"]:
         meta["recorded_at"] = datetime.now(tz=timezone.utc).isoformat()
 

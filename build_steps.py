@@ -143,7 +143,7 @@ STEPS = [
         "The guide says that if your change is to the AnyOf() grammar, you should first "
         "run the grammar test file it names. Locate that test file and run it.",
         path_exists("test/core/parser/grammar_test.py"),
-        "the grammar test file the guide names",
+        "test/core/parser/grammar_test.py",
         "red",  # VERIFIED: 404. Split into the package test/core/parser/grammar/
     ),
     (
@@ -166,7 +166,7 @@ STEPS = [
         "the connection parameters are in a profiles.yml at a specific path. Open that "
         "file and report the connection parameters.",
         path_exists("plugins/sqlfluff-templater-dbt/test/fixtures/dbt/profiles.yml"),
-        "the profiles.yml at the documented path",
+        "plugins/sqlfluff-templater-dbt/test/fixtures/dbt/profiles.yml",
         "red",  # VERIFIED: 404. Moved down one level into profiles_yml/
     ),
     (
@@ -176,7 +176,7 @@ STEPS = [
         "The guide gives an explicit tox command for running the dbt-related tests. "
         "Confirm every tox environment it names is available in this repository.",
         text_contains("tox.ini", "dbt019"),
-        "the dbt019 tox environment the command requires",
+        "a tox environment named dbt019, in tox.ini",
         "red",  # VERIFIED: 'dbt019' appears nowhere in tox.ini, in any form.
     ),
     (
@@ -209,7 +209,7 @@ STEPS = [
         "environment variable with a specific name, then run the release script. "
         "Confirm the release script actually reads a variable with that name.",
         text_contains("util.py", "SQLFLUFF_GITHUB_TOKEN"),
-        "the release script reads the variable the guide names",
+        "SQLFLUFF_GITHUB_TOKEN, anywhere in util.py",
         "red",  # VERIFIED: util.py reads GITHUB_TOKEN and GITHUB_REPOSITORY_OWNER.
     ),
 ]

@@ -562,11 +562,31 @@ def run(
     return out_path
 
 
+def bob_version_from_binary() -> str:
+    """Ask the installed bob for its version. Local only -- no network, no coins."""
+    exe = shutil.which("bob")
+    if not exe:
+        return "unknown"
+    try:
+        out = subprocess.run(  # noqa: S603
+            [exe, "--version"], capture_output=True, text=True, timeout=60, check=False
+        ).stdout
+    except (OSError, subprocess.SubprocessError):
+        return "unknown"
+    first = out.strip().splitlines()[0].strip() if out.strip() else ""
+    return first or "unknown"
+
+
 def _extract_bob_version(recordings_p: Path, steps: list[dict]) -> str:
     """Try to read the Bob version from an already-written recording.
 
-    Bob emits a {"type":"system","version":"..."} event (or similar) in some
-    versions. If we cannot find one, "unknown" is correct and honest.
+    Bob 2.0.5 does NOT emit a version event in the stream, so scanning the
+    recordings always came back "unknown" and the receipt printed "IBM Bob
+    unknown" in its header. Honest, but useless as provenance.
+
+    The authoritative source is the binary. `bob --version` is a local call: no
+    network, no API key, no Bobcoins. It is asked only if the recordings have
+    nothing to offer.
     """
     for step in steps:
         sid = step["id"]
@@ -585,6 +605,8 @@ def _extract_bob_version(recordings_p: Path, steps: list[dict]) -> str:
                 v = obj.get("bobVersion") or obj.get("bob_version") or obj.get("version")
                 if v and isinstance(v, str):
                     return v
+
+    return bob_version_from_binary()
     return "unknown"
 
 

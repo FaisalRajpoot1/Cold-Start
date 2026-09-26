@@ -59,6 +59,26 @@ def _clock(ms: int) -> str:
     return f"{total // 60}:{total % 60:02d}"
 
 
+def _tail_sentence(text: str, limit: int = 170) -> str:
+    """The end of what Bob said, cut at a boundary rather than mid-word.
+
+    A naive [-150:] produced: "', 'localhost')`, so you can point it at..."
+    A quote that starts inside a token reads as sloppy and undermines the very
+    thing it is evidence for.
+    """
+    flat = " ".join(text.split())
+    if len(flat) <= limit:
+        return flat
+    window = flat[-limit:]
+    # Prefer the start of the last sentence; fall back to a word boundary.
+    for sep in (". ", "? ", "! "):
+        idx = window.find(sep)
+        if 0 <= idx < limit - 40:
+            return window[idx + len(sep) :]
+    space = window.find(" ")
+    return ("… " + window[space + 1 :]) if space != -1 else window
+
+
 def verdict_for(claim: str, check_verdict: str) -> str:
     """The derived tile state. The only place a colour is decided."""
     if claim == "completed" and check_verdict == "pass":
@@ -96,7 +116,17 @@ def build(steps_doc: dict, runs_doc: dict, checks_doc: dict) -> dict:
         if state == "overruled":
             overruled += 1
 
-        reason = (chk.get("stderr_tail") or "").strip().splitlines()
+        # The reason a step is red.
+        #
+        # stderr_tail is empty for our checks, because they are silent
+        # `python -c` calls that communicate only through an exit code. The
+        # first render therefore showed struck-through rows with no explanation
+        # at all -- the receipt asserted a failure and withheld the evidence,
+        # which is the one thing it must never do.
+        #
+        # So: prefer real stderr when a check produced any, and otherwise state
+        # what the check was looking for, which steps.json already records.
+        stderr_lines = (chk.get("stderr_tail") or "").strip().splitlines()
         rows.append(
             {
                 "id": sid,
@@ -109,11 +139,18 @@ def build(steps_doc: dict, runs_doc: dict, checks_doc: dict) -> dict:
                 "claim": claim,
                 "check_cmd": " ".join(chk.get("cmd", step["check"]["cmd"])),
                 "describes": step["check"]["describes"],
-                "reason": reason[-1][:200] if reason else "",
+                "reason": (
+                    stderr_lines[-1][:200]
+                    if stderr_lines
+                    else f"checked for {step['check']['describes']} — not found"
+                ),
                 "coins": coins,
                 "ms": ms,
                 "tool_calls": int(run.get("tool_calls") or 0),
                 "ndjson": run.get("ndjson", ""),
+                # The tail of what Bob actually claimed. On an overruled row the
+                # contrast between this and the check is the entire point.
+                "said": _tail_sentence(run.get("bob_final_message") or ""),
             }
         )
 
@@ -196,6 +233,7 @@ tr.bad .n,tr.bad .num{{color:var(--stamp)}}
   font-family:"IBM Plex Mono",ui-monospace,Consolas,monospace;
 }}
 tr.bad + tr.why-row .why{{color:var(--stamp)}}
+.said{{color:var(--muted);font-style:italic}}
 .flag{{
   font-family:"IBM Plex Mono",ui-monospace,Consolas,monospace;
   font-size:10.5px;letter-spacing:.14em;color:var(--stamp);
@@ -282,6 +320,8 @@ def render(data: dict) -> str:
         if bad and r["reason"]:
             w('<tr class="why-row"><td></td><td colspan="3" class="why">')
             w(f"&#9492; {e(r['reason'])}")
+            if r["state"] == "overruled" and r["said"]:
+                w(f'<br><span class="said">&#9492; Bob said: &ldquo;{e(r["said"])}&rdquo;</span>')
             w("</td></tr>")
     w("</table>")
 
