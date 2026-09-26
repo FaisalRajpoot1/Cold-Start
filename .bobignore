@@ -1,0 +1,22 @@
+# Files IBM Bob must never read.
+#
+# The hackathon brief is explicit: if IBM security monitoring detects credentials
+# in a repository, the IBM Cloud account may be suspended immediately. .gitignore
+# keeps the key out of git; .bobignore keeps it out of Bob's context window, so it
+# can never be echoed into a transcript, a task summary, or a screenshot we then
+# publish as a required deliverable.
+bob.key
+*.key
+.env
+.env.*
+
+# Evidence, not source. Bob should never rewrite raw recordings, and they are large
+# enough to waste context.
+recordings/
+target/
+
+# Caches
+.pytest_cache/
+.ruff_cache/
+__pycache__/
+.venv/
