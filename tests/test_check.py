@@ -33,18 +33,19 @@ EXPECTED_OUTPUT = GOLDEN_DIR / "checks_output.json"
 def test_check_golden(tmp_path):
     """Committed input → byte-identical output.
 
-    time.monotonic is patched to always return 0 so duration_ms is
-    deterministic regardless of machine speed.
+    Workspaces are created so the check commands (pure sys.exit one-liners) run
+    inside them, giving deterministic exit codes. time.monotonic is patched to 0
+    so duration_ms is deterministic regardless of machine speed.
     """
+    target = tmp_path / "target"
+    (target / "ws-01").mkdir(parents=True)
+    (target / "ws-02").mkdir(parents=True)
     output_path = tmp_path / "checks.json"
 
-    # Workspaces don't need to exist: the check commands are pure Python
-    # one-liners (sys.exit) that don't look at the filesystem, so check.py
-    # will fall back to the parent directory when ws-NN is absent.
     with patch.object(check_mod.time, "monotonic", return_value=0.0):
         check(
             steps_path=INPUT_STEPS,
-            target_dir=tmp_path / "target",
+            target_dir=target,
             output_path=output_path,
         )
 
@@ -59,12 +60,15 @@ def test_check_golden(tmp_path):
 @pytest.mark.golden
 def test_check_output_is_byte_stable(tmp_path):
     """Same inputs in, byte-identical bytes out (AGENTS.md rule 5)."""
+    target = tmp_path / "target"
+    (target / "ws-01").mkdir(parents=True)
+    (target / "ws-02").mkdir(parents=True)
     out1 = tmp_path / "c1.json"
     out2 = tmp_path / "c2.json"
 
     with patch.object(check_mod.time, "monotonic", return_value=0.0):
-        check(steps_path=INPUT_STEPS, target_dir=tmp_path / "target", output_path=out1)
-        check(steps_path=INPUT_STEPS, target_dir=tmp_path / "target", output_path=out2)
+        check(steps_path=INPUT_STEPS, target_dir=target, output_path=out1)
+        check(steps_path=INPUT_STEPS, target_dir=target, output_path=out2)
 
     assert out1.read_bytes() == out2.read_bytes()
 
@@ -107,17 +111,19 @@ def test_run_check_stderr_tail(tmp_path):
     assert result["verdict"] == "fail"
 
 
-def test_run_check_missing_workspace_falls_back(tmp_path):
-    """If the workspace dir does not exist, the check still runs (in parent dir).
+def test_run_check_missing_workspace_is_fail(tmp_path):
+    """A missing workspace is a fail, decided without running anything.
 
-    The command will still fail if it relies on workspace content, which is the
-    honest answer — the step was never run.
+    The old walk-up behaviour let checks escape into ancestor directories and
+    find files they should not have seen, producing false greens. See
+    tests/test_check_isolation.py for the measured proof.
     """
     missing_ws = tmp_path / "ws-99"
     assert not missing_ws.exists()
-    # A command that doesn't care about cwd, so we can observe it still runs.
     result = run_check(["python", "-c", "import sys; sys.exit(0)"], cwd=missing_ws)
-    assert result["verdict"] == "pass"
+    assert result["verdict"] == "fail"
+    assert result["exit_code"] == -2
+    assert "workspace" in result["stderr_tail"].lower()
 
 
 def test_run_check_command_not_found(tmp_path):

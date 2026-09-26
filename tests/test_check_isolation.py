@@ -36,8 +36,6 @@ executes outside the directory it was handed.
 
 from __future__ import annotations
 
-from pathlib import Path
-
 import pytest
 
 from coldstart.check import run_check

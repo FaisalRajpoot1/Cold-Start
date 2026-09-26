@@ -55,22 +55,27 @@ def _tail(raw: bytes) -> str:
 def run_check(cmd: list[str], cwd: Path) -> dict:
     """Run one check command and return a partial check record (no step_id).
 
-    The workspace may not exist yet (Bob never ran, or run.py skipped the step).
-    We walk up the ancestry until we find a directory that actually exists so
-    subprocess never receives a non-existent cwd — on Windows that raises
-    NotADirectoryError (WinError 267) instead of letting the command run and
-    fail cleanly. The command will still fail because whatever postcondition it
-    checks for won't be present, which is the honest result.
+    DECIDE FIRST, RUN SECOND.
+
+    If the workspace is not a directory — whether it is absent or is a file —
+    return a fail record immediately, without touching subprocess. The walk-up
+    strategy used previously was wrong: walking up to a real directory could land
+    in a directory that satisfies the check (e.g. Cold Start's own repo root
+    contains pyproject.toml), producing a false green for a step whose workspace
+    was never even created. See tests/test_check_isolation.py for measured proof.
+
+    exit_code -2 marks "workspace missing" so it cannot be confused with a
+    genuine process failure (which always has a non-negative exit code).
     """
-    actual_cwd = cwd
-    while not actual_cwd.exists():
-        parent = actual_cwd.parent
-        if parent == actual_cwd:
-            # Reached the filesystem root without finding an existing dir.
-            # Fall back to the current working directory.
-            actual_cwd = Path()
-            break
-        actual_cwd = parent
+    if not cwd.is_dir():
+        return {
+            "cmd": cmd,
+            "exit_code": -2,
+            "stdout_tail": "",
+            "stderr_tail": f"workspace does not exist or is not a directory: {cwd}",
+            "duration_ms": 0,
+            "verdict": "fail",
+        }
 
     t0 = time.monotonic()
     try:
@@ -78,7 +83,7 @@ def run_check(cmd: list[str], cwd: Path) -> dict:
             cmd,
             capture_output=True,
             timeout=_CHECK_TIMEOUT,
-            cwd=actual_cwd,
+            cwd=cwd,
             shell=False,  # explicit: never a shell string (see AGENTS.md rule 2)
         )
         exit_code = proc.returncode
@@ -95,6 +100,12 @@ def run_check(cmd: list[str], cwd: Path) -> dict:
         exit_code = 127  # same convention as POSIX shell: command not found
         stdout_tail = ""
         stderr_tail = f"command not found: {cmd[0]!r}"
+    except (OSError, subprocess.SubprocessError) as exc:
+        # Catch any other OS-level or subprocess failure so a single bad check
+        # cannot abort the entire remaining batch.
+        exit_code = 1
+        stdout_tail = ""
+        stderr_tail = f"check failed to launch: {exc}"
 
     duration_ms = int((time.monotonic() - t0) * 1000)
     verdict = "pass" if exit_code == 0 else "fail"
