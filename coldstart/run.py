@@ -539,7 +539,10 @@ def run(
     # Determine the Bob version from the first result event that has one, or
     # fall back to "unknown". We do NOT run `bob --version` because that costs
     # nothing but could behave differently across environments.
-    bob_version = _extract_bob_version(recordings_p, steps)
+    # Skip provenance in a dry run: nothing is recorded, so there is nothing to
+    # stamp a version onto -- and the dry-run contract is that NO subprocess
+    # runs, which the version fallback would otherwise violate.
+    bob_version = "unknown" if dry_run else _extract_bob_version(recordings_p, steps)
 
     recorded_at = datetime.now(tz=timezone.utc).isoformat()
 
@@ -573,6 +576,16 @@ def bob_version_from_binary() -> str:
         ).stdout
     except (OSError, subprocess.SubprocessError):
         return "unknown"
+
+    # text=True should give str, but a stubbed subprocess in the test suite
+    # returns bytes -- and a bytes value reaching runs.json fails the schema
+    # with "expected str, got bytes". Decode defensively rather than trust the
+    # shape of something we do not own.
+    if isinstance(out, bytes):
+        out = out.decode("utf-8", errors="replace")
+    if not isinstance(out, str):
+        return "unknown"
+
     first = out.strip().splitlines()[0].strip() if out.strip() else ""
     return first or "unknown"
 
