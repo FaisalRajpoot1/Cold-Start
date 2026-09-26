@@ -26,7 +26,8 @@ def main() -> None:
     ap.add_argument("--speed", type=float, default=1.0, help="higher is faster")
     a = ap.parse_args()
 
-    lines = [ln for ln in a.recording.read_text(encoding="utf-8", errors="replace").splitlines() if ln.strip()]
+    raw = a.recording.read_text(encoding="utf-8", errors="replace")
+    lines = [ln for ln in raw.splitlines() if ln.strip()]
     events = []
     for ln in lines:
         try:
