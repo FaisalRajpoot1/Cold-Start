@@ -1,0 +1,49 @@
+{
+  "doc_path": "CONTRIBUTING.md",
+  "doc_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "schema": "coldstart.steps/1",
+  "source_commit": "0000000000000000000000000000000000000000",
+  "source_repo": "example/repo",
+  "steps": [
+    {
+      "bob_prompt": "Do the first thing.",
+      "check": {
+        "cmd": [
+          "python",
+          "-c",
+          "import sys; sys.exit(0)"
+        ],
+        "describes": "always passes"
+      },
+      "doc_lines": [
+        1,
+        2
+      ],
+      "expected": "green",
+      "id": 1,
+      "kind": "command",
+      "quote": "Step one quote.",
+      "title": "Step one"
+    },
+    {
+      "bob_prompt": "Do the second thing.",
+      "check": {
+        "cmd": [
+          "python",
+          "-c",
+          "import sys; sys.exit(1)"
+        ],
+        "describes": "always fails"
+      },
+      "doc_lines": [
+        3,
+        4
+      ],
+      "expected": "red",
+      "id": 2,
+      "kind": "command",
+      "quote": "Step two quote.",
+      "title": "Step two"
+    }
+  ]
+}
