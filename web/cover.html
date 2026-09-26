@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Cold Start — cover</title>
+<!--
+  1200x630 cover image. Screenshot this page.
+
+  Two elements, one colour. A thumbnail with four things in it reads as nothing,
+  and this has to survive being 200px wide in a submission grid.
+-->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#FBFAF7; --ink:#14110F; --muted:#8A8078;
+    --rule:#E0DCD5; --stamp:#C1272D;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:#E9E6DF;display:grid;place-items:center;min-height:100vh}
+  .card{
+    width:1200px;height:630px;background:var(--paper);
+    display:flex;flex-direction:column;justify-content:center;
+    padding:0 96px;position:relative;overflow:hidden;
+  }
+  .perf{
+    position:absolute;left:0;right:0;height:18px;
+    background-image:
+      linear-gradient(45deg,transparent 33.33%,var(--paper) 33.33%,
+        var(--paper) 66.66%,transparent 66.66%),
+      linear-gradient(-45deg,transparent 33.33%,var(--paper) 33.33%,
+        var(--paper) 66.66%,transparent 66.66%);
+    background-size:18px 36px;background-color:#E9E6DF;
+  }
+  .perf.t{top:0;background-position:0 -18px}
+  .perf.b{bottom:0;background-position:0 0}
+
+  .brand{
+    font-family:"IBM Plex Mono",ui-monospace,Consolas,monospace;
+    font-size:22px;font-weight:600;letter-spacing:.30em;text-transform:uppercase;
+    color:var(--ink);margin-bottom:8px;
+  }
+  .sub{
+    font-family:"IBM Plex Sans",system-ui,sans-serif;
+    font-size:20px;color:var(--muted);margin-bottom:44px;
+  }
+  .fig{
+    font-family:"IBM Plex Mono",ui-monospace,Consolas,monospace;
+    font-size:188px;line-height:.92;font-weight:600;color:var(--stamp);
+    font-variant-numeric:tabular-nums;letter-spacing:-.03em;
+  }
+  .cap{
+    font-family:"IBM Plex Sans",system-ui,sans-serif;
+    font-size:30px;color:var(--ink);margin-top:14px;
+  }
+  .stamp{
+    position:absolute;right:86px;bottom:96px;
+    border:4px double var(--stamp);color:var(--stamp);
+    font-family:"IBM Plex Mono",ui-monospace,Consolas,monospace;
+    font-size:21px;font-weight:600;letter-spacing:.13em;text-transform:uppercase;
+    padding:20px 26px;transform:rotate(-5deg);opacity:.92;line-height:1.55;
+    text-align:center;
+  }
+</style>
+</head>
+<body>
+  <div class="card">
+    <div class="perf t"></div>
+
+    <div class="brand">Cold Start</div>
+    <div class="sub">Itemised cost of following sqlfluff&rsquo;s CONTRIBUTING.md</div>
+
+    <div class="fig">$1.02</div>
+    <div class="cap">wasted per new hire, on 4 steps that cannot work</div>
+
+    <div class="stamp">
+      The check overruled Bob<br>on 3 of 13 claimed successes
+    </div>
+
+    <div class="perf b"></div>
+  </div>
+</body>
+</html>

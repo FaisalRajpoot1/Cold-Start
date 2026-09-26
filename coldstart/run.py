@@ -131,6 +131,36 @@ def _prepare_workspace(pristine: Path, workspace: Path) -> None:
 # ---------------------------------------------------------------------------
 
 
+def derive_claim(parsed: dict) -> str:
+    """Bob's own claim about the task: "completed" or "failed".
+
+    THE DEFECT THIS CLOSES
+
+    This was `"failed" if error_frames else "completed"`, which treats silence
+    as success. A real after-run proved that wrong: step 14 produced a recording
+    containing exactly ONE line, the echo of the prompt. No tool calls, no
+    assistant reply, no result event. Bob hung for 218 seconds and emitted
+    nothing.
+
+    With no result event there are no error frames, so the old rule called it
+    "completed". The deterministic check then passed -- because the check tests
+    the state of the WORKSPACE, and the workspace was correctly patched whether
+    or not Bob ever touched it. The receipt rendered a green tile for a step
+    that never ran.
+
+    A false green in the tool built to expose false greens.
+
+    So a claim of "completed" now requires POSITIVE evidence: a result event
+    actually arrived. Absence of failure is not success.
+    """
+    if parsed["error_frames"]:
+        return "failed"
+    if parsed.get("bob_status", "unknown") == "unknown" or not parsed.get("task_id"):
+        # No result event reached us. The task did not finish; it vanished.
+        return "failed"
+    return "completed"
+
+
 def _parse_ndjson(raw: bytes) -> dict:
     """Parse the raw stdout from a `bob run --format stream-json` invocation.
 
@@ -407,7 +437,7 @@ def _run_one_step(
         }
 
     # bob_claim: "completed" iff no error frames — it is Bob's claim, not a verdict.
-    bob_claim = "failed" if parsed["error_frames"] else "completed"
+    bob_claim = derive_claim(parsed)
 
     return {
         "task_id": parsed["task_id"],

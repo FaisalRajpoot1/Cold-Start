@@ -21,7 +21,7 @@ import json
 from datetime import datetime, timezone
 from pathlib import Path
 
-from coldstart.run import _parse_ndjson, bob_version_from_binary
+from coldstart.run import _parse_ndjson, bob_version_from_binary, derive_claim
 from coldstart.schema import RUNS_SCHEMA, dump_validated, load_validated
 
 
@@ -70,7 +70,7 @@ def reparse(steps_path: Path, recordings: Path, out_path: Path, previous: Path |
                 "tool_errors": parsed.get("tool_errors", []),
                 "capped": parsed["capped"],
                 "max_cost_applied": parsed.get("max_cost_applied", meta["max_cost"]),
-                "bob_claim": "failed" if parsed["error_frames"] else "completed",
+                "bob_claim": derive_claim(parsed),
                 "bob_final_message": parsed["bob_final_message"],
             }
         )
