@@ -34,7 +34,6 @@ from __future__ import annotations
 
 import argparse
 import html
-import json
 from pathlib import Path
 
 from coldstart.schema import load_validated
@@ -155,11 +154,15 @@ body{{
 /* The perforated edge. Two gradients, no image. */
 .perf{{
   height:14px; max-width:720px; margin:0 auto; background:var(--paper);
-  --z:linear-gradient(45deg,transparent 33.33%,var(--paper) 33.33%,var(--paper) 66.66%,transparent 66.66%),
-      linear-gradient(-45deg,transparent 33.33%,var(--paper) 33.33%,var(--paper) 66.66%,transparent 66.66%);
+  --z:linear-gradient(45deg,transparent 33.33%,var(--paper) 33.33%,
+        var(--paper) 66.66%,transparent 66.66%),
+      linear-gradient(-45deg,transparent 33.33%,var(--paper) 33.33%,
+        var(--paper) 66.66%,transparent 66.66%);
 }}
-.perf.top{{background:var(--paper-edge);background-image:var(--z);background-size:14px 28px;background-position:0 -14px}}
-.perf.bot{{background:var(--paper-edge);background-image:var(--z);background-size:14px 28px;background-position:0 0}}
+.perf.top{{background:var(--paper-edge);background-image:var(--z);
+  background-size:14px 28px;background-position:0 -14px}}
+.perf.bot{{background:var(--paper-edge);background-image:var(--z);
+  background-size:14px 28px;background-position:0 0}}
 h1{{
   font-family:"IBM Plex Mono",ui-monospace,"Cascadia Mono",Consolas,monospace;
   font-size:15px; font-weight:600; letter-spacing:.22em; text-transform:uppercase;
@@ -218,7 +221,10 @@ tr.bad + tr.why-row .why{{color:var(--stamp)}}
   transform:rotate(-4deg);opacity:.9;line-height:1.5;
   animation:land .18s ease-out;
 }}
-@keyframes land{{from{{opacity:0;transform:rotate(-4deg) scale(1.06)}}to{{opacity:.9;transform:rotate(-4deg) scale(1)}}}}
+@keyframes land{{
+  from{{opacity:0;transform:rotate(-4deg) scale(1.06)}}
+  to{{opacity:.9;transform:rotate(-4deg) scale(1)}}
+}}
 @media (prefers-reduced-motion:reduce){{.stamp{{animation:none}}}}
 .foot{{
   font-size:11.5px;color:var(--muted);margin-top:30px;
