@@ -2,7 +2,7 @@
   "bobcoin_usd_rate": 0.5,
   "note": "A task capped by --max-cost is recorded here with status 'error', while the headless stream-json 'result' event for that same task reports status 'success'. Bob knows the task failed; the headless result event does not say so. This is why Cold Start reads failure from the stream's 'error' frames and from an independent deterministic check, never from result.status.",
   "schema": "coldstart.sessions/1",
-  "session_count": 41,
+  "session_count": 43,
   "sessions": [
     {
       "bobcoins": 0.0,
@@ -536,9 +536,35 @@
       "task_type": "normal",
       "updated_at": 1790436290787,
       "usd": 0.0801
+    },
+    {
+      "bobcoins": 0.531,
+      "context_tokens": 34841,
+      "created_at": 1790441437149,
+      "created_utc": "2026-09-26T16:50:37.149000+00:00",
+      "id": "14ee0a8d69ebb143f26b9406bf2f131c",
+      "messages": 24,
+      "prompt_prefix": "Read AGENTS.md, docs/SUBMISSION.md and docs/DESIGN.md. Then rewrite README.md.\n\nTHE PROBLEM\n\nREADME.md currently says \"S",
+      "status": "active",
+      "task_type": "normal",
+      "updated_at": 1790441535513,
+      "usd": 0.2655
+    },
+    {
+      "bobcoins": 0.727372,
+      "context_tokens": 47882,
+      "created_at": 1790442869858,
+      "created_utc": "2026-09-26T17:14:29.858000+00:00",
+      "id": "3f84c0c6133c6114ee745606c218bb86",
+      "messages": 22,
+      "prompt_prefix": "Read AGENTS.md, docs/DESIGN.md and docs/SUBMISSION.md. Then build web/deck.html.\n\nWHAT IT IS\n\nThe submission slide deck,",
+      "status": "active",
+      "task_type": "normal",
+      "updated_at": 1790443859378,
+      "usd": 0.3637
     }
   ],
   "source": "IBM Bob local task database (read-only)",
-  "total_bobcoins": 26.883982,
-  "total_usd": 13.442
+  "total_bobcoins": 28.142354,
+  "total_usd": 14.0712
 }
