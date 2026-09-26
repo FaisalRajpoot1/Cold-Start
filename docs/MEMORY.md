@@ -53,6 +53,16 @@ All five verified by direct API call on 2026-09-26.
 | V19 | `make release 3.4.2` | Makefile takes `VERSION=`; a positional is parsed as a second goal |
 | V20 | CONTRIBUTING.md is **406 lines, 20,075 bytes**, and contains a section headed **"AI-Assisted Contributions"** — the project explicitly welcomes what we are doing |
 
+## Bob's local task database — found 2026-09-26
+
+| # | Fact |
+|---|---|
+| **V22** | **The local DB records `status: 'error'` for the capped task, while that same task's stream `result` event reported `status: "success"`.** Bob KNOWS the task failed. The headless result event simply does not say so. This sharpens V7: it is not an absence of information, it is an omission from the stream |
+| V23 | `~/.bob/db/bob.db` is SQLite, schema version 11. Tables: `tasks`, `messages`, `attribution_logs`, `task_pending_approvals`, `key_value_store`, `_migrations` |
+| V24 | `tasks.costs` is JSON carrying `cost`, `contextTokens`, and a `contextWindowBreakdown`. **`projectRules: 1321` tokens confirms `AGENTS.md` is being loaded into every task** |
+| V25 | **`bob --list-tasks` is broken in 2.0.5.** It exits 1 with `Error: Invalid --prompt: Too small` even though `bob --help` documents it as standalone. Worth filing |
+| V26 | Spend to 2026-09-26 17:30: **3.9545 Bobcoins ($1.98)** across 8 sessions. `check.py` plus its fix was 3.6533 over 88 messages. **36.05 remaining** |
+
 ## IBM's own surface
 
 | # | Fact |
@@ -105,6 +115,21 @@ demanded the message explain **why**. Fixed to name the injection risk and the W
 quoting hazard. At hour 19 the difference between those two messages is twenty minutes.
 
 ---
+
+### R4 — A read-only tool that reported confidently wrong numbers
+
+**Believed:** opening Bob's SQLite DB with `mode=ro&immutable=1` was the safest way to
+read it while Bob is running.
+**Found:** `immutable=1` tells SQLite the file cannot change, so it **skips the
+write-ahead log** — and every recent session lives in the WAL until a checkpoint. The
+exporter reported **0.8583 Bobcoins** for a task that had actually cost **3.6533**.
+**Changed to:** `mode=ro` alone, which reads the WAL correctly and still cannot write.
+A comment in the code now forbids re-adding the flag.
+
+**Why it is recorded rather than quietly fixed.** It is the same failure as V7, committed
+by us, in a tool built to document exactly that failure: a confident, plausible, wrong
+number with no error to warn anyone. Caught only because the figure disagreed with one
+observed minutes earlier.
 
 # 4. Open Questions
 
