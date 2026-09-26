@@ -1,0 +1,289 @@
+{
+  "doc_path": "CONTRIBUTING.md",
+  "doc_sha256": "2b42c8af691f4b9c081f849691de202436913ccd280479d2fb5b222ea04407f8",
+  "schema": "coldstart.steps/1",
+  "source_commit": "c7401613e851a6913ec3de8e003247e6fe8e5387",
+  "source_repo": "sqlfluff/sqlfluff",
+  "steps": [
+    {
+      "bob_prompt": "The contributing guide says the simplest way to set up a development environment for this project is to use tox. Locate the tox configuration in this repository that this instruction refers to, and confirm it is present.",
+      "check": {
+        "cmd": [
+          "python",
+          "-c",
+          "import sys,pathlib,re;sys.exit(0 if pathlib.Path('tox.ini').exists() else 1)"
+        ],
+        "describes": "the tox configuration the instruction depends on"
+      },
+      "doc_lines": [
+        127,
+        127
+      ],
+      "expected": "green",
+      "id": 1,
+      "kind": "prose",
+      "quote": "The simplest way to set up a development environment is to use [`tox`](https://tox.wiki/en/latest/installation.html).",
+      "title": "Use tox to set up the development environment"
+    },
+    {
+      "bob_prompt": "The guide states a minimum supported Python version. Determine what it is, then confirm the Python available in this environment satisfies it.",
+      "check": {
+        "cmd": [
+          "python",
+          "-c",
+          "import sys,pathlib,re;sys.exit(0 if sys.version_info >= (3,10) else 1)"
+        ],
+        "describes": "the interpreter meets the documented minimum"
+      },
+      "doc_lines": [
+        129,
+        129
+      ],
+      "expected": "green",
+      "id": 2,
+      "kind": "prose",
+      "quote": "**IMPORTANT:** Python 3.10 is the minimum version we support. Feel free to test on anything between `python3.10` and `python3.14`.",
+      "title": "Confirm the minimum supported Python version"
+    },
+    {
+      "bob_prompt": "The guide tells a new contributor to build and activate a virtual environment using the tox environment named dbt180. Confirm that tox environment is actually available in this repository.",
+      "check": {
+        "cmd": [
+          "python",
+          "-c",
+          "import sys,pathlib,re;t=pathlib.Path('tox.ini').read_text(encoding='utf-8',errors='replace');sys.exit(0 if 'dbt{170,180,190,1100}' in t else 1)"
+        ],
+        "describes": "the dbt180 tox environment, via its brace expansion in envlist"
+      },
+      "doc_lines": [
+        141,
+        141
+      ],
+      "expected": "green",
+      "id": 3,
+      "kind": "command",
+      "quote": "tox -e dbt180 --devenv .venv",
+      "title": "Build the virtual environment with the dbt180 tox env"
+    },
+    {
+      "bob_prompt": "The guide says the development environment installs an example plugin from a path inside this repository. Find that plugin directory and confirm it exists.",
+      "check": {
+        "cmd": [
+          "python",
+          "-c",
+          "import sys,pathlib,re;sys.exit(0 if pathlib.Path('plugins/sqlfluff-plugin-example').exists() else 1)"
+        ],
+        "describes": "the example plugin the environment installs"
+      },
+      "doc_lines": [
+        154,
+        154
+      ],
+      "expected": "green",
+      "id": 4,
+      "kind": "command",
+      "quote": "This virtual environment will already have the package installed in editable mode for you, as well as `requirements_dev.txt` and `plugins/sqlfluff-plugin-example`.",
+      "title": "Install the example plugin in editable mode"
+    },
+    {
+      "bob_prompt": "The guide gives a targeted tox invocation for day-to-day work naming four environments. Confirm the linting environment among them is defined in this repository.",
+      "check": {
+        "cmd": [
+          "python",
+          "-c",
+          "import sys,pathlib,re;t=pathlib.Path('tox.ini').read_text(encoding='utf-8',errors='replace');sys.exit(0 if '[testenv:linting]' in t else 1)"
+        ],
+        "describes": "the linting tox environment"
+      },
+      "doc_lines": [
+        210,
+        210
+      ],
+      "expected": "green",
+      "id": 5,
+      "kind": "command",
+      "quote": "tox -e generate-fixture-yml,py310,linting,mypy",
+      "title": "Run a targeted tox environment"
+    },
+    {
+      "bob_prompt": "For dialect work the guide says you can regenerate parse fixtures by running a script directly, and gives its path. Confirm that script is present.",
+      "check": {
+        "cmd": [
+          "python",
+          "-c",
+          "import sys,pathlib,re;sys.exit(0 if pathlib.Path('test/generate_parse_fixture_yml.py').exists() else 1)"
+        ],
+        "describes": "the fixture generation script named in the guide"
+      },
+      "doc_lines": [
+        256,
+        256
+      ],
+      "expected": "green",
+      "id": 6,
+      "kind": "command",
+      "quote": "`python test/generate_parse_fixture_yml.py -d mysql` will do the same.",
+      "title": "Regenerate the parse fixtures"
+    },
+    {
+      "bob_prompt": "The guide says that after changing a dialect you must resync the Rust dialects by running a script at a given path. Confirm that script exists.",
+      "check": {
+        "cmd": [
+          "python",
+          "-c",
+          "import sys,pathlib,re;sys.exit(0 if pathlib.Path('utils/rustify.py').exists() else 1)"
+        ],
+        "describes": "the rustify script named in the guide"
+      },
+      "doc_lines": [
+        259,
+        259
+      ],
+      "expected": "green",
+      "id": 7,
+      "kind": "command",
+      "quote": "with sqlfluff installed in a virtual environment, run `utils/rustify.py build` to resync the languages.",
+      "title": "Resync the Rust dialects"
+    },
+    {
+      "bob_prompt": "The guide says that if your change is to the AnyOf() grammar, you should first run the grammar test file it names. Locate that test file and run it.",
+      "check": {
+        "cmd": [
+          "python",
+          "-c",
+          "import sys,pathlib,re;sys.exit(0 if pathlib.Path('test/core/parser/grammar_test.py').exists() else 1)"
+        ],
+        "describes": "the grammar test file the guide names"
+      },
+      "doc_lines": [
+        300,
+        300
+      ],
+      "expected": "red",
+      "id": 8,
+      "kind": "command",
+      "quote": "1. If your change is to the `AnyOf()` grammar, first running `tox -e py310 -- test/core/parser/grammar_test.py` would be wise.",
+      "title": "Run the grammar tests for an AnyOf() change"
+    },
+    {
+      "bob_prompt": "When developing an isolated rule, the guide says to run the yaml test cases file it names, filtered to one rule. Confirm that test file is present.",
+      "check": {
+        "cmd": [
+          "python",
+          "-c",
+          "import sys,pathlib,re;sys.exit(0 if pathlib.Path('test/rules/yaml_test_cases_test.py').exists() else 1)"
+        ],
+        "describes": "the yaml rule test file"
+      },
+      "doc_lines": [
+        274,
+        274
+      ],
+      "expected": "green",
+      "id": 9,
+      "kind": "command",
+      "quote": "`pytest test/rules/yaml_test_cases_test.py -k AL01`",
+      "title": "Run the yaml rule test cases"
+    },
+    {
+      "bob_prompt": "The guide says the dbt templater tests need a local Postgres instance and that the connection parameters are in a profiles.yml at a specific path. Open that file and report the connection parameters.",
+      "check": {
+        "cmd": [
+          "python",
+          "-c",
+          "import sys,pathlib,re;sys.exit(0 if pathlib.Path('plugins/sqlfluff-templater-dbt/test/fixtures/dbt/profiles.yml').exists() else 1)"
+        ],
+        "describes": "the profiles.yml at the documented path"
+      },
+      "doc_lines": [
+        307,
+        307
+      ],
+      "expected": "red",
+      "id": 10,
+      "kind": "prose",
+      "quote": "The dbt templater tests require a locally running Postgres instance. See the required connection parameters in `plugins/sqlfluff-templater-dbt/test/fixtures/dbt/profiles.yml`.",
+      "title": "Find the dbt connection parameters"
+    },
+    {
+      "bob_prompt": "The guide gives an explicit tox command for running the dbt-related tests. Confirm every tox environment it names is available in this repository.",
+      "check": {
+        "cmd": [
+          "python",
+          "-c",
+          "import sys,pathlib,re;t=pathlib.Path('tox.ini').read_text(encoding='utf-8',errors='replace');sys.exit(0 if 'dbt019' in t else 1)"
+        ],
+        "describes": "the dbt019 tox environment the command requires"
+      },
+      "doc_lines": [
+        314,
+        314
+      ],
+      "expected": "red",
+      "id": 11,
+      "kind": "command",
+      "quote": "tox -e cov-init,dbt019-py310,cov-report-dbt -- plugins/sqlfluff-templater-dbt",
+      "title": "Run the dbt templater tests"
+    },
+    {
+      "bob_prompt": "The guide offers pre-commit hooks installed through a named tox environment. Confirm that environment is defined.",
+      "check": {
+        "cmd": [
+          "python",
+          "-c",
+          "import sys,pathlib,re;t=pathlib.Path('tox.ini').read_text(encoding='utf-8',errors='replace');sys.exit(0 if '[testenv:pre-commit]' in t else 1)"
+        ],
+        "describes": "the pre-commit tox environment"
+      },
+      "doc_lines": [
+        334,
+        334
+      ],
+      "expected": "green",
+      "id": 12,
+      "kind": "command",
+      "quote": "tox -e pre-commit -- install",
+      "title": "Install the pre-commit hooks"
+    },
+    {
+      "bob_prompt": "The guide links to a separate README for building and testing the documentation website. Open it and confirm it is there.",
+      "check": {
+        "cmd": [
+          "python",
+          "-c",
+          "import sys,pathlib,re;sys.exit(0 if pathlib.Path('docs/README.md').exists() else 1)"
+        ],
+        "describes": "the documentation README the guide links to"
+      },
+      "doc_lines": [
+        344,
+        344
+      ],
+      "expected": "green",
+      "id": 13,
+      "kind": "prose",
+      "quote": "See the [Documentation Website README.md](./docs/README.md) file for more information on how to build and test this.",
+      "title": "Read the documentation website guide"
+    },
+    {
+      "bob_prompt": "The release checklist says to store a GitHub personal access token in an environment variable with a specific name, then run the release script. Confirm the release script actually reads a variable with that name.",
+      "check": {
+        "cmd": [
+          "python",
+          "-c",
+          "import sys,pathlib,re;t=pathlib.Path('util.py').read_text(encoding='utf-8',errors='replace');sys.exit(0 if 'SQLFLUFF_GITHUB_TOKEN' in t else 1)"
+        ],
+        "describes": "the release script reads the variable the guide names"
+      },
+      "doc_lines": [
+        376,
+        376
+      ],
+      "expected": "red",
+      "id": 14,
+      "kind": "prose",
+      "quote": "Once generated, store it in your env (zshrc, etc) as `SQLFLUFF_GITHUB_TOKEN`.",
+      "title": "Store the release token for the release script"
+    }
+  ]
+}
