@@ -1,0 +1,37 @@
+--- a/CONTRIBUTING.md
++++ b/CONTRIBUTING.md
+@@ -297,7 +297,7 @@
+      are very likely to have knock-on implications across the rest of the test
+      suite and it may be necessary to run the whole thing. In these
+      situations however you can usually work slowly outward, for example:
+-     1. If your change is to the `AnyOf()` grammar, first running `tox -e py310 -- test/core/parser/grammar_test.py` would be wise.
++     1. If your change is to the `AnyOf()` grammar, first running `tox -e py310 -- test/core/parser/grammar/grammar_anyof_test.py` would be wise.
+      2. ...followed by `tox -e py310 -- test/core/parser` once the above is passing.
+      3. ...and then `tox -e py310 -- test/core`.
+      4. ...and finally the full suite `tox -e py310`.
+@@ -305,13 +305,13 @@
+ #### dbt templater tests
+ 
+ The dbt templater tests require a locally running Postgres instance. See the
+-required connection parameters in `plugins/sqlfluff-templater-dbt/test/fixtures/dbt/profiles.yml`.
++required connection parameters in `plugins/sqlfluff-templater-dbt/test/fixtures/dbt/profiles_yml/profiles.yml`.
+ We recommend using https://postgresapp.com/.
+ 
+ To run the dbt-related tests you will have to explicitly include these tests:
+ 
+ ```shell
+-tox -e cov-init,dbt019-py310,cov-report-dbt -- plugins/sqlfluff-templater-dbt
++tox -e cov-init,dbt180-py310,cov-report-dbt -- plugins/sqlfluff-templater-dbt
+ ```
+ 
+ For more information on adding and running test cases see the [Parser Test README](test/fixtures/dialects/README.md) and the [Rules Test README](test/fixtures/rules/std_rule_cases/README.md).
+@@ -374,7 +374,8 @@
+ both read & write access on the "Content" scope is that only tokens with
+ write access can see _draft_ releases, which is what we need access to).
+ All maintainers should have sufficient access to generate such a token. Once
+-generated, store it in your env (zshrc, etc) as `SQLFLUFF_GITHUB_TOKEN`. Then:
++generated, store it in your env (zshrc, etc) as `GITHUB_TOKEN`. Also set
++`GITHUB_REPOSITORY_OWNER` to your GitHub username or organisation. Then:
+ 
+ ```shell
+ make shell
