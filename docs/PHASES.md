@@ -134,6 +134,23 @@ misses at hour 28.
 
 ---
 
+# Cut, 2026-09-26: `split.py`
+
+**Removed from scope.** `docs/ARCHITECTURE.md` describes `split.py` turning a document into
+`steps.json`. We are hand-curating `steps.json` from the verified CONTRIBUTING.md instead.
+
+**Why.** An automatic splitter is a "works on any repository" feature we cannot validate in
+the time left, and a bad auto-split is a live demo risk on the one artifact the whole
+submission rests on. Curating fourteen steps from a document we have already verified line by
+line is both faster and more trustworthy.
+
+**The honest cost:** Cold Start currently works on one document that a human prepared. That
+goes in the README above the fold, not in a footnote. The splitter is named as future work.
+
+**Frees roughly 3 hours**, which go to `render.py` and the video.
+
+---
+
 # The Cut List — in the order we cut
 
 1. The vocabulary/insight panel. Nice, not needed
